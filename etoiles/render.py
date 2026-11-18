@@ -30,6 +30,8 @@ def build_timeline():
     toks, seg_of = [], []
     for si, (_, text) in enumerate(scenes.SEGMENTS):
         for tk in text.split():
+            if not re.search(r'\w', tk):
+                continue
             toks.append(tk); seg_of.append(si)
     a = [norm(t) for t in toks]
     b = [norm(w[0]) for w in words]
@@ -92,19 +94,50 @@ def current_word(t):
     return idx
 
 
-def draw_word(cv, text):
-    size = 150
+STYLE = getattr(scenes, 'STYLE', {})
+GRAIN = None
+if STYLE.get('grain'):
+    _r = np.random.default_rng(0)
+    GRAIN = [(_r.normal(0, STYLE['grain'], (H, W, 1))).astype(np.int16) for _ in range(6)]
+
+
+def draw_word(cv, text, age=1.0, fi=0):
+    size = STYLE.get('size', 150)
+    maxw = STYLE.get('maxw', 1720)
     font = skia.Font(TYPE, size)
     font.setEdging(skia.Font.Edging.kAntiAlias)
     w = font.measureText(text)
-    if w > 1720:
-        size = size * 1720 / w
+    if w > maxw:
+        size = size * maxw / w
         font.setSize(size)
         w = font.measureText(text)
     cap = size * 0.70
-    p = P('#ffffff')
-    p.setBlendMode(skia.BlendMode.kDifference)
-    cv.drawString(text, (W - w) / 2, H / 2 + cap / 2, font, p)
+    x, y = (W - w) / 2, H / 2 + cap / 2
+    p = P(STYLE.get('color', '#ffffff'))
+    p.setBlendMode(skia.BlendMode.kExclusion if STYLE.get('exclusion') else skia.BlendMode.kDifference)
+    glitch = STYLE.get('glitch') and age < 2.5 / FPS
+    if not glitch:
+        cv.drawString(text, x, y, font, p)
+        return
+    # glitch d'apparition : tranches horizontales décalées + fantôme coloré
+    rnd = random.Random(fi * 7 + len(text))
+    top = y - cap * 1.15
+    hgt = cap * 1.4
+    n = 6
+    for k in range(n):
+        y0 = top + hgt * k / n
+        cv.save()
+        cv.clipRect(skia.Rect.MakeLTRB(0, y0, W, y0 + hgt / n + 1))
+        dx = rnd.choice([0, 0, rnd.uniform(-38, 38)])
+        cv.drawString(text, x + dx, y, font, p)
+        cv.restore()
+    g = P(rnd.choice(['#2DE2E6', '#FF4F81', '#B6FF3B']), 150)
+    g.setBlendMode(skia.BlendMode.kExclusion)
+    cv.save()
+    y0 = top + hgt * rnd.uniform(0.1, 0.7)
+    cv.clipRect(skia.Rect.MakeLTRB(0, y0, W, y0 + hgt * 0.22))
+    cv.drawString(text, x + rnd.uniform(-60, 60), y, font, g)
+    cv.restore()
 
 
 def frame(fi):
@@ -133,12 +166,19 @@ def frame(fi):
     sc.dyn(cv, lt, d)
     cv.restore()
     # vignette légère
+    if hasattr(sc, 'fg'):
+        cv.save(); cv.translate(W / 2 + px * 1.6, H / 2 + py * 1.6); cv.scale(z * 1.04, z * 1.04); cv.translate(-W / 2, -H / 2)
+        sc.fg(cv, lt, d); cv.restore()
     cv.drawRect(skia.Rect.MakeWH(W, H), P(shader=lib.rad(W / 2, H / 2, 1250, [lib.C('#000000', 0), lib.C('#000000', 0), lib.C('#000000', 110)], [0, 0.6, 1])))
     wi = current_word(t)
     if wi is not None:
-        draw_word(cv, DISP[wi])
+        draw_word(cv, DISP[wi], t - TIMES[wi], fi)
     img = surf.makeImageSnapshot()
-    return img.toarray(colorType=skia.kRGBA_8888_ColorType).tobytes()
+    arr = img.toarray(colorType=skia.kRGBA_8888_ColorType)
+    if GRAIN is not None:
+        rgb = arr[:, :, :3].astype(np.int16) + GRAIN[fi % len(GRAIN)]
+        arr[:, :, :3] = np.clip(rgb, 0, 255).astype(np.uint8)
+    return arr.tobytes()
 
 
 def main():
@@ -157,7 +197,7 @@ def main():
     n = int(math.ceil(END * FPS))
     print(f'{n} frames, {END:.1f}s, {len(SEGS)} scènes', flush=True)
     ff = subprocess.Popen(['ffmpeg', '-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', f'{W}x{H}', '-r', str(FPS), '-i', '-',
-                           '-i', os.path.join(HERE, 'voice.wav'), '-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p',
+                           '-i', os.path.join(HERE, 'voice.wav'), '-c:v', 'libx264', '-preset', 'medium', *(['-b:v', '12M', '-maxrate', '14M', '-bufsize', '24M'] if GRAIN is not None else ['-crf', '18']), '-pix_fmt', 'yuv420p',
                            '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', '-t', f'{END:.3f}', out], stdin=subprocess.PIPE)
     with Pool(os.cpu_count()) as pool:
         for i, b in enumerate(pool.imap(frame, range(n), chunksize=6)):
