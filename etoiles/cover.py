@@ -29,8 +29,9 @@ def make(out, w, h, img, lines, size, maxw):
     text_lines(cv, lines, w/2, h/2, size, maxw)
     s.makeImageSnapshot().save(out)
 
-img = scene_layer(scenes.Supernova, 1.4, 2.7)
-here = os.path.dirname(os.path.abspath(__file__))
-make(os.path.join(here, 'cover_16x9.png'), 1920, 1080, img, ["TU ES FAIT", "D'ÉTOILES", "MORTES"], 190, 1000)
-make(os.path.join(here, 'cover_3x4.png'), 1080, 1440, img, ["TU ES FAIT", "D'ÉTOILES", "MORTES"], 170, 900)
-print('ok')
+if __name__ == '__main__':
+  img = scene_layer(scenes.Supernova, 1.4, 2.7)
+  here = os.path.dirname(os.path.abspath(__file__))
+  make(os.path.join(here, 'cover_16x9.png'), 1920, 1080, img, ["TU ES FAIT", "D'ÉTOILES", "MORTES"], 190, 1000)
+  make(os.path.join(here, 'cover_3x4.png'), 1080, 1440, img, ["TU ES FAIT", "D'ÉTOILES", "MORTES"], 170, 900)
+  print('ok')

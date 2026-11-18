@@ -6,11 +6,13 @@ import numpy as np
 import skia
 import lib
 from lib import W, H, P
-import scenes
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+ENGINE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.environ.get('PROJECT', ENGINE)
+sys.path.insert(0, HERE)
+import scenes
 FPS = 30
-FONT_PATH = os.path.join(HERE, 'fonts', 'Rubik-700.ttf')
+FONT_PATH = os.path.join(ENGINE, 'fonts', 'Rubik-700.ttf')
 TYPE = skia.Typeface.MakeFromFile(FONT_PATH)
 scenes.FONT = TYPE
 SS = 1.5      # sur-échantillonnage du décor statique
@@ -141,7 +143,7 @@ def frame(fi):
 
 def main():
     args = sys.argv[1:]
-    out = os.path.join(HERE, 'etoiles_mortes.mp4')
+    out = os.path.join(HERE, os.environ.get('OUTNAME', 'etoiles_mortes.mp4'))
     if '--out' in args:
         out = args[args.index('--out') + 1]
     if '--preview' in args:
