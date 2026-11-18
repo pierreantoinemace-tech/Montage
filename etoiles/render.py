@@ -101,7 +101,7 @@ if STYLE.get('grain'):
     GRAIN = [(_r.normal(0, STYLE['grain'], (H, W, 1))).astype(np.int16) for _ in range(6)]
 
 
-def draw_word(cv, text, age=1.0, fi=0):
+def draw_word(cv, text, age=1.0, fi=0, surf=None):
     size = STYLE.get('size', 150)
     maxw = STYLE.get('maxw', 1720)
     font = skia.Font(TYPE, size)
@@ -115,6 +115,19 @@ def draw_word(cv, text, age=1.0, fi=0):
     x, y = (W - w) / 2, H / 2 + cap / 2
     p = P(STYLE.get('color', '#ffffff'))
     p.setBlendMode(skia.BlendMode.kExclusion if STYLE.get('exclusion') else skia.BlendMode.kDifference)
+    if STYLE.get('readable') and surf is not None:
+        # luminance moyenne du décor derrière le mot
+        x0, y0 = max(0, int(x)), max(0, int(y - cap * 1.1))
+        x1, y1 = min(W, int(x + w)), min(H, int(y + cap * 0.3))
+        arr = surf.makeImageSnapshot().toarray(colorType=skia.kRGBA_8888_ColorType)[y0:y1:4, x0:x1:4, :3].astype(np.float32) / 255
+        lum = arr @ np.array([0.2126, 0.7152, 0.0722], np.float32)
+        L = float(lum.mean()); spread = float(lum.std())
+        if L < 0.72:
+            sh = P('#0A0420', 170, blur=size * 0.09)
+            cv.drawString(text, x, y + size * 0.04, font, sh)
+            cv.drawString(text, x, y + size * 0.04, font, P('#0A0420', 90, blur=size * 0.25))
+        if 0.30 < L < 0.72 or spread > 0.22:
+            p = P(STYLE.get('color', '#ffffff'))  # crème plein : toujours lisible
     glitch = STYLE.get('glitch') and age < 2.5 / FPS
     if not glitch:
         cv.drawString(text, x, y, font, p)
@@ -172,7 +185,7 @@ def frame(fi):
     cv.drawRect(skia.Rect.MakeWH(W, H), P(shader=lib.rad(W / 2, H / 2, 1250, [lib.C('#000000', 0), lib.C('#000000', 0), lib.C('#000000', 110)], [0, 0.6, 1])))
     wi = current_word(t)
     if wi is not None:
-        draw_word(cv, DISP[wi], t - TIMES[wi], fi)
+        draw_word(cv, DISP[wi], t - TIMES[wi], fi, surf)
     img = surf.makeImageSnapshot()
     arr = img.toarray(colorType=skia.kRGBA_8888_ColorType)
     if GRAIN is not None:
