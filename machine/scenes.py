@@ -13,7 +13,7 @@ pd = importlib.util.module_from_spec(_s); _s.loader.exec_module(pd)
 OLD, floating_eye, moon = pd.OLD, pd.floating_eye, pd.moon
 
 FONT = None
-STYLE = dict(exclusion=True, color='#F0EBBE', size=196, maxw=1760, glitch=True, grain=7, readable=True)
+STYLE = dict(exclusion=True, color='#F0EBBE', size=196, maxw=1760, glitch=True, grain=7, readable=True, fps=60, trans=0.7, float=True)
 HERO = dict(skin='#7AC8D8', hair='#14304A', robe='#3A0E5A')
 NIGHT = ('#ffffff', '#BFE6FF', '#FFB0E8', '#B98CFF')
 
@@ -41,13 +41,16 @@ def stars(seed, n=180):
     return Stars(n, seed, rmax=2.2, colors=NIGHT)
 
 
-def hero(cv, cx, cy, s, eyes='open', third=True, smile=False, hair_up=True, seed=5, **kw):
+def hero(cv, t, cx, cy, s, eyes='open', third=True, smile=False, hair_up=True, seed=5, **kw):
     h = dict(HERO); h.update(kw)
-    pd.dreamer(cv, cx, cy, s, skin=h['skin'], hair=h['hair'], robe=h['robe'], eyes=eyes, third_eye=third, hair_up=hair_up, seed=seed)
+    cy += 0.025 * s * math.sin(t * 1.4 + seed)             # respiration / flottement
+    cv.save(); cv.translate(cx, cy + s); cv.rotate(1.5 * math.sin(t * 0.7 + seed)); cv.translate(-cx, -cy - s)
+    pd.dreamer(cv, cx, cy, s, skin=h['skin'], hair=h['hair'], robe=h['robe'], eyes=eyes, third_eye=third, hair_up=hair_up, seed=seed, t=t + 0.01)
     if smile:
         cv.drawRect(skia.Rect.MakeXYWH(cx - 0.18 * s, cy + 0.55 * s, 0.36 * s, 0.12 * s), P(h['skin']))
         p = skia.Path(); p.addArc(skia.Rect.MakeLTRB(cx - 0.16 * s, cy + 0.48 * s, cx + 0.16 * s, cy + 0.68 * s), 20, 140)
         cv.drawPath(p, P(OLD, 255, stroke=5))
+    cv.restore()
 
 
 def eyes_field(cv, t, seed, n=6, area=(80, 80, W - 80, 520)):
@@ -123,7 +126,7 @@ class Question(Scene):
     def dyn(self, cv, t, d):
         self.st.draw(cv, t)
         eyes_field(cv, t, 2, 5, (120, 120, W - 120, 900))
-        hero(cv, 960, 790, 220, eyes='open')
+        hero(cv, t, 960, 790, 220, eyes='open')
 
 
 # 2 ─ « Si on t'offrait la vie de tes rêves, pour toujours, tu dirais oui ? »
@@ -188,7 +191,7 @@ class Lie(Scene):
         cv.save(); cv.clipPath(win, doAntiAlias=True)
         cv.translate(960, 620); cv.rotate(-90)
         k = ease((t - d * 0.5) / max(d * 0.4, 0.1))
-        hero(cv, 0, -80, 150, eyes='closed' if k > 0.5 else 'lidded', hair_up=False, third=k > 0.5)
+        hero(cv, t, 0, -80, 150, eyes='closed' if k > 0.5 else 'lidded', hair_up=False, third=k > 0.5)
         cv.restore()
 
 
@@ -243,11 +246,11 @@ class Wishes(_Dream):
             for k in range(30):
                 a = k / 30 * 6.283 + t
                 circle(cv, 960 + math.cos(a) * 520, 520 + math.sin(a) * 300, 8, '#FFE04A')
-            hero(cv, 960, 800, 190, eyes='lidded', smile=True)
+            hero(cv, t, 960, 800, 190, eyes='lidded', smile=True)
             ofill(cv, ppoly([(830, 300), (870, 220), (920, 280), (960, 200), (1000, 280), (1050, 220), (1090, 300)]), '#FFE04A', ol=OLD)
         elif q == 1:
-            hero(cv, 700, 800, 180, eyes='lidded', smile=True)
-            hero(cv, 1220, 800, 180, eyes='lidded', smile=True, skin='#E07AB8', hair='#2A0E3A', robe='#1E5A6A', seed=9)
+            hero(cv, t, 700, 800, 180, eyes='lidded', smile=True)
+            hero(cv, t, 1220, 800, 180, eyes='lidded', smile=True, skin='#E07AB8', hair='#2A0E3A', robe='#1E5A6A', seed=9)
             for k in range(6):
                 u = (t * 0.6 + k / 6) % 1
                 c = '#FF4F81'
@@ -276,7 +279,7 @@ class Real(_Dream):
         self.dream_bg(cv)
 
     def dyn(self, cv, t, d):
-        hero(cv, 960, 790, 220, eyes='lidded', smile=True)
+        hero(cv, t, 960, 790, 220, eyes='lidded', smile=True)
         rnd = random.Random(7)
         for i in range(40):
             a = rnd.uniform(0, 6.283); r = rnd.uniform(300, 800)
@@ -301,7 +304,7 @@ class Body(Scene):
         win = capsule(cv, 960, 700, 560, t, glow_k=0.5 + 0.5 * math.sin(t * 2))
         cv.save(); cv.clipPath(win, doAntiAlias=True)
         cv.translate(960, 680); cv.rotate(-90)
-        hero(cv, 0, -80, 160, eyes='closed', hair_up=False)
+        hero(cv, t, 0, -80, 160, eyes='closed', hair_up=False)
         cv.restore()
 
 
@@ -317,7 +320,7 @@ class Nozick(Scene):
 
     def dyn(self, cv, t, d):
         self.st.draw(cv, t, 200)
-        hero(cv, 560, 600, 220, eyes='lidded', third=False, skin='#D8B8A8', hair='#5A5A6A', robe='#3A2A1A', seed=11)
+        hero(cv, t, 560, 600, 220, eyes='lidded', third=False, skin='#D8B8A8', hair='#5A5A6A', robe='#3A2A1A', seed=11)
         for k in (-1, 1):
             ofill(cv, pcircle(560 + k * 66, 590, 62), '#000000', a=0, ol=OLD, w=6)
         cv.drawLine(560 - 4, 590, 560 + 4, 590, P(OLD, 255, stroke=6))
@@ -347,7 +350,7 @@ class No(Scene):
             x = 220 + i * 370
             sway = 30 * math.sin(t * 6 + i)
             cv.save(); cv.translate(x, 760); cv.rotate(sway * 0.4); cv.translate(-x, -760)
-            hero(cv, x, 760, 120, eyes='open', third=False, hair_up=False, skin=sk, hair=hr, robe=rb, seed=20 + i)
+            hero(cv, t, x, 760, 120, eyes='open', third=False, hair_up=False, skin=sk, hair=hr, robe=rb, seed=20 + i)
             cv.restore()
 
 
@@ -458,7 +461,7 @@ class WakeDoor(Scene):
         cv.drawRRect(skia.RRect.MakeRectXY(skia.Rect.MakeXYWH(dx - 14, dy - 14, dw + 28, dh + 28), 180, 180), P(OLD, 255, stroke=14))
         for j in range(6):
             ofill(cv, prr(dx - 140 - j * 40, dy + dh + 20 + j * 40, 200, 24, 8), '#2A2050', ol=OLD, w=4)
-        hero(cv, 520, 810, 185, eyes='open')
+        hero(cv, t, 520, 810, 185, eyes='open')
 
 
 # 15 ─ « Et là, beaucoup préfèrent rester. »
@@ -479,7 +482,7 @@ class Stay(Scene):
         ofill(cv, prr(0, 0, dw, dh, 170), '#3A1A6A', ol=OLD)
         cv.restore()
         cv.drawRRect(skia.RRect.MakeRectXY(skia.Rect.MakeXYWH(dx - 14, dy - 14, dw + 28, dh + 28), 180, 180), P(OLD, 255, stroke=14))
-        hero(cv, 600, 810, 185, eyes='lidded', smile=k > 0.7)
+        hero(cv, t, 600, 810, 185, eyes='lidded', smile=k > 0.7)
 
 
 # 16 ─ « Alors peut-être que ce qu'on aime, ce n'est pas la vérité. C'est notre vie. »
@@ -503,7 +506,7 @@ class Cozy(Scene):
             cv.drawLine(x, yy, x - 4, yy + 26, P('#7A8BFF', 160, stroke=3))
         cv.restore()
         cv.drawRect(skia.Rect.MakeXYWH(1395, 130, 10, 500), P(OLD)); cv.drawRect(skia.Rect.MakeXYWH(1090, 375, 620, 10), P(OLD))
-        hero(cv, 640, 800, 200, eyes='lidded', smile=True, hair_up=False)
+        hero(cv, t, 640, 800, 200, eyes='lidded', smile=True, hair_up=False)
         mx, my = 1000, 880
         ofill(cv, prr(mx - 70, my - 120, 140, 130, 26), '#FF8A5C', ol=OLD)
         noodle(cv, [(mx + 70, my - 90), (mx + 120, my - 60), (mx + 70, my - 30)], '#FF8A5C', w=14)
@@ -533,7 +536,7 @@ class Choice(Scene):
         cv.restore()
         glow(cv, dx + dw / 2, dy + dh / 2, 340, '#FFFFFF', 120)
         cv.drawRRect(skia.RRect.MakeRectXY(skia.Rect.MakeXYWH(dx - 12, dy - 12, dw + 24, dh + 24), 150, 150), P(OLD, 255, stroke=12))
-        hero(cv, 960, 800, 200, eyes='open')
+        hero(cv, t, 960, 800, 200, eyes='open')
 
 
 SEGMENTS = [

@@ -48,7 +48,7 @@ def moon(cv, x, y, r, drip=True):
             ofill(cv, d, '#FFF0C8', ol=OLD, w=4)
 
 
-def dreamer(cv, cx, cy, s, skin='#B48AE0', hair='#2A1050', robe='#1E5A6A', eyes='lidded', third_eye=False, hair_up=True, seed=1):
+def dreamer(cv, cx, cy, s, skin='#B48AE0', hair='#2A1050', robe='#1E5A6A', eyes='lidded', third_eye=False, hair_up=True, seed=1, t=0.0):
     """Visage adulte allongé, cou long, paupières lourdes, cheveux qui flottent vers le haut. (cx,cy)=centre du visage."""
     dark = mix(skin, '#000000', 0.35)
     rnd = random.Random(seed)
@@ -64,14 +64,14 @@ def dreamer(cv, cx, cy, s, skin='#B48AE0', hair='#2A1050', robe='#1E5A6A', eyes=
             for k in range(n):
                 v0, v1 = k / n, (k + 1) / n
                 def pt(v):
-                    return (x0 + lean * v + 0.13 * s * math.sin(v * 7 + ph) * v, cy - 0.55 * s - ln * v)
+                    return (x0 + lean * v + 0.13 * s * math.sin(v * 7 + ph + t * 1.6) * v + 0.05 * s * math.sin(t * 0.9 + ph) * v, cy - 0.55 * s - ln * v * (1 + 0.04 * math.sin(t * 1.1 + ph)))
                 w = 0.13 * s * (1 - v0) + 3
                 a, b = pt(v0), pt(v1)
                 cv.drawLine(a[0], a[1], b[0], b[1], P(OLD, 255, stroke=w + OW * 1.6))
             for k in range(n):
                 v0, v1 = k / n, (k + 1) / n
                 def pt(v):
-                    return (x0 + lean * v + 0.13 * s * math.sin(v * 7 + ph) * v, cy - 0.55 * s - ln * v)
+                    return (x0 + lean * v + 0.13 * s * math.sin(v * 7 + ph + t * 1.6) * v + 0.05 * s * math.sin(t * 0.9 + ph) * v, cy - 0.55 * s - ln * v * (1 + 0.04 * math.sin(t * 1.1 + ph)))
                 w = 0.13 * s * (1 - v0) + 3
                 a, b = pt(v0), pt(v1)
                 cv.drawLine(a[0], a[1], b[0], b[1], P(mix(hair, '#7A3CFF', v0 * 0.6), 255, stroke=w))
@@ -104,6 +104,9 @@ def dreamer(cv, cx, cy, s, skin='#B48AE0', hair='#2A1050', robe='#1E5A6A', eyes=
     # yeux : grands, ronds, paupières lourdes
     for k in (-1, 1):
         ex, ey, er = cx + k * 0.3 * s, cy - 0.05 * s, 0.22 * s
+        if eyes != 'closed' and t > 0 and ((t * 0.55 + seed * 0.37) % 4.0) < 0.13:
+            pp = skia.Path(); pp.addArc(skia.Rect.MakeLTRB(ex - er, ey - er * 0.4, ex + er, ey + er * 0.6), 20, 140)
+            cv.drawPath(pp, P(OLD, 255, stroke=OW)); continue
         if eyes == 'closed':
             pp = skia.Path(); pp.addArc(skia.Rect.MakeLTRB(ex - er, ey - er * 0.4, ex + er, ey + er * 0.6), 20, 140)
             cv.drawPath(pp, P(OLD, 255, stroke=OW))

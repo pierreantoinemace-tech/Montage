@@ -11,7 +11,7 @@ ENGINE = os.path.dirname(os.path.abspath(__file__))
 HERE = os.environ.get('PROJECT', ENGINE)
 sys.path.insert(0, HERE)
 import scenes
-FPS = 30
+FPS = getattr(scenes, 'STYLE', {}).get('fps', 30)
 FONT_PATH = os.path.join(ENGINE, 'fonts', 'Rubik-700.ttf')
 TYPE = skia.Typeface.MakeFromFile(FONT_PATH)
 scenes.FONT = TYPE
@@ -79,7 +79,8 @@ def get_scene(si):
         cv.scale(SS, SS); cv.translate(M, M)
         sc.static(cv)
         sc._img = surf.makeImageSnapshot()
-        _cache.clear()
+        if len(_cache) >= 3:
+            _cache.pop(next(iter(_cache)))
         _cache[si] = sc
     return _cache[si]
 
@@ -128,7 +129,7 @@ def draw_word(cv, text, age=1.0, fi=0, surf=None):
             cv.drawString(text, x, y + size * 0.04, font, P('#0A0420', 90, blur=size * 0.25))
         if 0.30 < L < 0.72 or spread > 0.22:
             p = P(STYLE.get('color', '#ffffff'))  # crème plein : toujours lisible
-    glitch = STYLE.get('glitch') and age < 2.5 / FPS
+    glitch = STYLE.get('glitch') and age < 0.083
     if not glitch:
         cv.drawString(text, x, y, font, p)
         return
@@ -153,20 +154,27 @@ def draw_word(cv, text, age=1.0, fi=0, surf=None):
     cv.restore()
 
 
-def frame(fi):
-    t = fi / FPS
-    si = max(i for i, (a, b) in enumerate(SEGS) if a <= t + 1e-6)
+def scene_layer(si, t, fi, extra_zoom=0.0):
+    """Dessine la scène si au temps global t (sans texte) et renvoie une image."""
     t0, t1 = SEGS[si]
     lt, d = t - t0, t1 - t0
     sc = get_scene(si)
     surf = skia.Surface(W, H)
     cv = surf.getCanvas()
     cv.clear(skia.ColorBLACK)
-    u = min(1.0, lt / max(d, 0.1))
-    z = sc.zoom[0] + (sc.zoom[1] - sc.zoom[0]) * u
+    u = max(0.0, min(1.0, lt / max(d, 0.1)))
+    if STYLE.get('float'):
+        u = lib.ease(u)
+    z = sc.zoom[0] + (sc.zoom[1] - sc.zoom[0]) * u + extra_zoom
     px = sc.pan[0] + (sc.pan[2] - sc.pan[0]) * u
     py = sc.pan[1] + (sc.pan[3] - sc.pan[1]) * u
-    if sc.shake and lt < sc.shake:
+    rot = 0.0
+    if STYLE.get('float'):
+        # caméra « flottante » : lente dérive + léger roulis, comme dans un rêve
+        px += 14 * math.sin(t * 0.55 + si) + 6 * math.sin(t * 1.3)
+        py += 10 * math.cos(t * 0.45 + si * 0.7)
+        rot = 0.7 * math.sin(t * 0.35 + si)
+    if sc.shake and 0 <= lt < sc.shake:
         k = 1 - lt / sc.shake
         rnd = random.Random(fi)
         px += rnd.uniform(-28, 28) * k
@@ -174,14 +182,80 @@ def frame(fi):
     cv.save()
     cv.translate(W / 2 + px, H / 2 + py)
     cv.scale(z, z)
+    cv.rotate(rot)
     cv.translate(-W / 2, -H / 2)
     cv.drawImageRect(sc._img, skia.Rect.MakeXYWH(-M, -M, W + 2 * M, H + 2 * M), skia.SamplingOptions(skia.FilterMode.kLinear, skia.MipmapMode.kLinear))
     sc.dyn(cv, lt, d)
     cv.restore()
-    # vignette légère
     if hasattr(sc, 'fg'):
         cv.save(); cv.translate(W / 2 + px * 1.6, H / 2 + py * 1.6); cv.scale(z * 1.04, z * 1.04); cv.translate(-W / 2, -H / 2)
         sc.fg(cv, lt, d); cv.restore()
+    return surf.makeImageSnapshot()
+
+
+TRANS = ['dissolve', 'ink', 'liquid', 'iris', 'flash', 'dissolve', 'ink', 'liquid']
+
+
+def trans_mask(kind, p, seed):
+    """Masque (chemin) de la scène entrante pour une progression p (0→1)."""
+    path = skia.Path()
+    if kind == 'iris':
+        path.addCircle(W / 2, H / 2, 1150 * p)
+    elif kind == 'ink':
+        rnd = random.Random(seed)
+        cx, cy = rnd.uniform(500, 1400), rnd.uniform(300, 780)
+        for k in range(7):
+            a = rnd.uniform(0, 6.283); dd = rnd.uniform(0, 380) * p
+            c = skia.Path(); c.addCircle(cx + math.cos(a) * dd, cy + math.sin(a) * dd, max(1.0, (200 + 1300 * p) * rnd.uniform(0.55, 1.0) * p))
+            path = skia.Op(path, c, skia.PathOp.kUnion_PathOp) if k else c
+    elif kind == 'liquid':
+        x = -200 + (W + 400) * p
+        path.moveTo(-50, -50); path.lineTo(x, -50)
+        for y in range(0, H + 61, 30):
+            path.lineTo(x + 90 * math.sin(y * 0.012 + p * 9 + seed) + 40 * math.sin(y * 0.031), y)
+        path.lineTo(-50, H + 50); path.close()
+    return path
+
+
+def frame(fi):
+    t = fi / FPS
+    si = max(i for i, (a, b) in enumerate(SEGS) if a <= t + 1e-6)
+    tr = STYLE.get('trans', 0)
+    pair = None
+    if tr:
+        t0, t1 = SEGS[si]
+        if si > 0 and t - t0 < tr / 2:
+            pair = (si - 1, si, 0.5 + (t - t0) / tr)
+        elif si + 1 < len(SEGS) and t1 - t < tr / 2:
+            pair = (si, si + 1, 0.5 - (t1 - t) / tr)
+    surf = skia.Surface(W, H)
+    cv = surf.getCanvas()
+    if pair is None:
+        cv.drawImage(scene_layer(si, t, fi), 0, 0)
+    else:
+        a, b, p = pair
+        p = lib.ease(max(0.0, min(1.0, p)))
+        kind = TRANS[b % len(TRANS)]
+        ia = scene_layer(a, t, fi, extra_zoom=0.10 * p)
+        ib = scene_layer(b, t, fi, extra_zoom=0.10 * (1 - p))
+        samp = skia.SamplingOptions(skia.FilterMode.kLinear)
+        if kind == 'dissolve':
+            cv.drawImage(ia, 0, 0)
+            pb = skia.Paint(); pb.setAlphaf(p)
+            cv.drawImage(ib, 0, 0, samp, pb)
+        elif kind == 'flash':
+            cv.drawImage(ia if p < 0.5 else ib, 0, 0)
+            cv.drawRect(skia.Rect.MakeWH(W, H), P('#F4ECFF', 255 * (1 - abs(p - 0.5) * 2) ** 1.5))
+        else:
+            cv.drawImage(ia, 0, 0)
+            m = trans_mask(kind, p, b)
+            # liseré lumineux qui suit le bord du masque
+            cv.drawPath(m, P('#B98CFF', 200 * math.sin(p * math.pi), stroke=26, blur=12))
+            cv.save(); cv.clipPath(m, doAntiAlias=True)
+            cv.drawImage(ib, 0, 0)
+            cv.restore()
+            cv.drawPath(m, P('#F4ECFF', 230 * math.sin(p * math.pi), stroke=5))
+    # vignette légère
     cv.drawRect(skia.Rect.MakeWH(W, H), P(shader=lib.rad(W / 2, H / 2, 1250, [lib.C('#000000', 0), lib.C('#000000', 0), lib.C('#000000', 110)], [0, 0.6, 1])))
     wi = current_word(t)
     if wi is not None:
