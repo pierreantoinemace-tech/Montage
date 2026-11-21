@@ -229,6 +229,74 @@ def trans_mask(kind, p, seed):
     return path
 
 
+_DREAM = {}
+
+
+def _dream_assets():
+    if not _DREAM:
+        rnd = random.Random(77)
+        _DREAM['orbs'] = [(rnd.uniform(0, W), rnd.uniform(0, H), rnd.uniform(6, 34), rnd.uniform(0.15, 0.6), rnd.uniform(0, 6.28),
+                           rnd.choice(['#FFB0E8', '#BFE6FF', '#FFE6A0', '#C8A8FF'])) for _ in range(34)]
+        _DREAM['dust'] = [(rnd.uniform(0, W), rnd.uniform(0, H), rnd.uniform(1, 2.6), rnd.uniform(0, 6.28)) for _ in range(140)]
+        _DREAM['rows'] = np.arange(H)[:, None]
+        _DREAM['cols'] = np.arange(W)[None, :]
+    return _DREAM
+
+
+def dream_pass(surf, cv, t, fi):
+    """Couche « rêve » : halo (bloom), flou sur les bords, voile lacté, lumières colorées, brume, orbes, poussières, ondulation."""
+    A = _dream_assets()
+    img = surf.makeImageSnapshot()
+    samp = skia.SamplingOptions(skia.FilterMode.kLinear)
+    # image réduite + floutée (sert au halo et au flou des bords)
+    small = skia.Surface(W // 4, H // 4)
+    sp = skia.Paint(); sp.setImageFilter(skia.ImageFilters.Blur(6, 6))
+    small.getCanvas().drawImageRect(img, skia.Rect.MakeWH(W // 4, H // 4), samp, sp)
+    blurred = small.makeImageSnapshot()
+    # ondulation « sous l'eau » (décalage sinusoïdal des lignes)
+    if STYLE.get('wobble', 3):
+        arr = img.toarray(colorType=skia.kRGBA_8888_ColorType)
+        amp = STYLE.get('wobble', 3)
+        shift = (amp * np.sin(np.arange(H) * 0.018 + t * 1.7)).astype(np.int64)
+        arr = arr[A['rows'], (A['cols'] - shift[:, None]) % W]
+        img = skia.Image.fromarray(np.ascontiguousarray(arr), colorType=skia.kRGBA_8888_ColorType)
+        cv.clear(skia.ColorBLACK)
+        cv.drawImage(img, 0, 0)
+    # halo : on ajoute la version floutée en mode « screen »
+    bp = skia.Paint(); bp.setBlendMode(skia.BlendMode.kScreen); bp.setAlphaf(STYLE.get('bloom', 0.42))
+    cv.drawImageRect(blurred, skia.Rect.MakeWH(W, H), samp, bp)
+    # flou progressif vers les bords (comme une vision de demi-sommeil)
+    cv.saveLayer(None, None)
+    cv.drawImageRect(blurred, skia.Rect.MakeWH(W, H), samp, None)
+    mk = skia.Paint(); mk.setBlendMode(skia.BlendMode.kDstIn)
+    mk.setShader(lib.rad(W / 2, H / 2, 1150, [lib.C('#000000', 0), lib.C('#000000', 0), lib.C('#000000', 255)], [0, 0.45, 1]))
+    cv.drawRect(skia.Rect.MakeWH(W, H), mk)
+    cv.restore()
+    # voile lacté qui remonte les noirs vers le violet
+    vp = P('#3A1A6A', 46); vp.setBlendMode(skia.BlendMode.kScreen)
+    cv.drawRect(skia.Rect.MakeWH(W, H), vp)
+    # lumières colorées qui dérivent (light leaks)
+    for k, col in enumerate(('#FF6FB8', '#4FD8E8', '#9A6BFF')):
+        x = W / 2 + 820 * math.sin(t * 0.13 + k * 2.1)
+        y = H / 2 + 420 * math.cos(t * 0.11 + k * 1.7)
+        lp = P(shader=lib.rad(x, y, 760, [lib.C(col, 70), lib.C(col, 0)]))
+        lp.setBlendMode(skia.BlendMode.kScreen)
+        cv.drawRect(skia.Rect.MakeWH(W, H), lp)
+    # brume basse qui glisse
+    for k in range(4):
+        x = (t * (18 + k * 9) + k * 520) % (W + 1200) - 600
+        cv.drawOval(skia.Rect.MakeLTRB(x - 600, H - 230 + k * 30, x + 600, H + 140), P('#C8B8FF', 34, blur=60))
+    # orbes (bokeh) et poussières qui flottent
+    for x, y, r, sp_, ph, col in A['orbs']:
+        yy = (y - t * 30 * sp_) % (H + 200) - 100
+        xx = x + 40 * math.sin(t * 0.4 + ph)
+        a = 0.5 + 0.5 * math.sin(t * 0.9 + ph)
+        cv.drawCircle(xx, yy, r, P(col, 38 + 40 * a, blur=r * 0.5))
+    for x, y, r, ph in A['dust']:
+        yy = (y - t * 14) % H
+        cv.drawCircle(x + 20 * math.sin(t * 0.6 + ph), yy, r, P('#FFF6E0', 90 + 80 * math.sin(t * 2 + ph)))
+
+
 def frame(fi):
     t = fi / FPS
     si = max(i for i, (a, b) in enumerate(SEGS) if a <= t + 1e-6)
@@ -252,7 +320,14 @@ def frame(fi):
         ia = scene_layer(a, t, fi, extra_zoom=0.10 * p)
         ib = scene_layer(b, t, fi, extra_zoom=0.10 * (1 - p))
         samp = skia.SamplingOptions(skia.FilterMode.kLinear)
-        if kind == 'dissolve':
+        if kind == 'dream':
+            blur = 2 + 26 * math.sin(p * math.pi)
+            pa = skia.Paint(); pa.setImageFilter(skia.ImageFilters.Blur(blur, blur))
+            cv.drawImage(ia, 0, 0, samp, pa)
+            pb = skia.Paint(); pb.setImageFilter(skia.ImageFilters.Blur(blur, blur)); pb.setAlphaf(p)
+            cv.drawImage(ib, 0, 0, samp, pb)
+            cv.drawRect(skia.Rect.MakeWH(W, H), P('#F4ECFF', 70 * math.sin(p * math.pi)))
+        elif kind == 'dissolve':
             cv.drawImage(ia, 0, 0)
             pb = skia.Paint(); pb.setAlphaf(p)
             cv.drawImage(ib, 0, 0, samp, pb)
@@ -268,6 +343,8 @@ def frame(fi):
             cv.drawImage(ib, 0, 0)
             cv.restore()
             cv.drawPath(m, P('#F4ECFF', 230 * math.sin(p * math.pi), stroke=5))
+    if STYLE.get('dream'):
+        dream_pass(surf, cv, t, fi)
     # vignette légère
     cv.drawRect(skia.Rect.MakeWH(W, H), P(shader=lib.rad(W / 2, H / 2, 1250, [lib.C('#000000', 0), lib.C('#000000', 0), lib.C('#000000', 110)], [0, 0.6, 1])))
     wi = current_word(t)

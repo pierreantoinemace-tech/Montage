@@ -13,7 +13,8 @@ night, stars, hero, OLD, ribbons = ws.night, ws.stars, ws.hero, ws.OLD, ws.ribbo
 
 FONT = None
 STYLE = dict(exclusion=True, color='#F0EBBE', size=196, maxw=1760, glitch=True, grain=7, readable=True,
-             fps=60, trans=0.75, float=True, trans_kinds=['ink', 'liquid', 'dissolve', 'ripple', 'iris', 'ink', 'dissolve', 'liquid'])
+             fps=60, trans=1.0, float=True, dream=True, bloom=0.42, wobble=3,
+             trans_kinds=['dream', 'ink', 'dream', 'liquid', 'dream', 'ripple', 'dream', 'iris'])
 
 
 class Scene:
