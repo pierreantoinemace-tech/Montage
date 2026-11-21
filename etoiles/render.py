@@ -208,6 +208,18 @@ def trans_mask(kind, p, seed):
             a = rnd.uniform(0, 6.283); dd = rnd.uniform(0, 380) * p
             c = skia.Path(); c.addCircle(cx + math.cos(a) * dd, cy + math.sin(a) * dd, max(1.0, (200 + 1300 * p) * rnd.uniform(0.55, 1.0) * p))
             path = skia.Op(path, c, skia.PathOp.kUnion_PathOp) if k else c
+    elif kind == 'ripple':
+        R = 1250 * p
+        n = 120
+        for i in range(n + 1):
+            ang = i / n * 6.2832
+            r = max(1.0, R * (1 + 0.06 * math.sin(ang * 14 + p * 18)))
+            x, y = W / 2 + math.cos(ang) * r, H / 2 + math.sin(ang) * r
+            if i == 0:
+                path.moveTo(x, y)
+            else:
+                path.lineTo(x, y)
+        path.close()
     elif kind == 'liquid':
         x = -200 + (W + 400) * p
         path.moveTo(-50, -50); path.lineTo(x, -50)
@@ -235,7 +247,8 @@ def frame(fi):
     else:
         a, b, p = pair
         p = lib.ease(max(0.0, min(1.0, p)))
-        kind = TRANS[b % len(TRANS)]
+        kinds = STYLE.get('trans_kinds', TRANS)
+        kind = kinds[b % len(kinds)]
         ia = scene_layer(a, t, fi, extra_zoom=0.10 * p)
         ib = scene_layer(b, t, fi, extra_zoom=0.10 * (1 - p))
         samp = skia.SamplingOptions(skia.FilterMode.kLinear)
