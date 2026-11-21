@@ -23,7 +23,7 @@ def text_lines(cv, lines, cx, cy, size, maxw):
 
 ec.text_lines = text_lines
 
-img = ec.scene_layer(scenes.WowPaper, 4.5, 4.7)
+img = ec.scene_layer(scenes.Surge, 2.5, 3.9)
 
 lines = ["LE SIGNAL", "WOW!"]
 ec.make(os.path.join(HERE, 'cover_16x9.png'), 1920, 1080, img, lines, 190, 1100)
