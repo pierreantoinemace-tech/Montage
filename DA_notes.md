@@ -14,10 +14,15 @@
 
 ## Pour chaque nouvelle vidéo
 - Hook visuel dès la première image (mouvement ou élément intrigant), premier mot affiché tout de suite, jamais de seconde vide.
-- Identité de série : même mascotte, même format de titre, couvertures avec la même police et le même placement.
+- Le perso aux trois yeux revient dans chaque vidéo, SANS nom, et pas de série ni de nom de série.
+- Couvertures : même police et même placement du titre.
 - La musique et les bruitages sont ajoutés par l'utilisateur dans l'appli TikTok.
 
 ## Écriture
 - Hook expressif sans trop en faire, puis ton détaché et posé, sans être monotone. Jamais de chuchotement.
 - Une idée forte par vidéo, un fait concret surprenant, une phrase finale courte et citable, fin positive.
 - Tags ElevenLabs en anglais : [curious], [casual], [thoughtful], [softly], [warmly], [sighs], [short pause].
+
+## Son
+- L'utilisateur peut envoyer un son TikTok : on ne garde que l'audio, uniquement pour caler l'animation (transitions, pulsations, gros moments). Le son n'est PAS dans le montage final, il l'ajoute lui-même sur TikTok. La durée de la vidéo n'a pas à égaler celle du son.
+- Son actuel analysé : `son/rythme.json`.
