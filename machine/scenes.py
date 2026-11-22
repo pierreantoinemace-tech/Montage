@@ -45,7 +45,7 @@ def hero(cv, t, cx, cy, s, eyes='open', third=True, smile=False, hair_up=True, s
     h = dict(HERO); h.update(kw)
     cy += 0.025 * s * math.sin(t * 1.4 + seed)             # respiration / flottement
     cv.save(); cv.translate(cx, cy + s); cv.rotate(1.5 * math.sin(t * 0.7 + seed)); cv.translate(-cx, -cy - s)
-    pd.dreamer(cv, cx, cy, s, skin=h['skin'], hair=h['hair'], robe=h['robe'], eyes=eyes, third_eye=third, hair_up=hair_up, seed=seed, t=t + 0.01)
+    pd.dreamer(cv, cx, cy, s, skin=h['skin'], hair=h['hair'], robe=h['robe'], eyes=eyes, third_eye=third, hair_up=hair_up, seed=seed, t=t + 0.01, arms=h.get('arms'), look=h.get('look'))
     if smile:
         cv.drawRect(skia.Rect.MakeXYWH(cx - 0.18 * s, cy + 0.55 * s, 0.36 * s, 0.12 * s), P(h['skin']))
         p = skia.Path(); p.addArc(skia.Rect.MakeLTRB(cx - 0.16 * s, cy + 0.48 * s, cx + 0.16 * s, cy + 0.68 * s), 20, 140)

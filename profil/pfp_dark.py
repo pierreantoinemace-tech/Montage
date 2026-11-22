@@ -12,6 +12,53 @@ S = 1080
 OLD = '#120624'   # contour plus sombre pour l'ambiance nuit
 
 
+def draw_arms(cv, cx, cy, s, t, pose, skin, robe):
+    """Bras « nouilles » + mains, animés selon la pose."""
+    sh = [(cx - 0.72 * s, cy + 1.5 * s), (cx + 0.72 * s, cy + 1.5 * s)]
+    sw = math.sin(t * 2.0)
+    idle = [(cx - 1.05 * s, cy + 2.6 * s + 0.05 * s * sw), (cx + 1.05 * s, cy + 2.6 * s - 0.05 * s * sw)]
+    hands = list(idle)
+    extra = None
+    if pose == 'wave':
+        hands[1] = (cx + 1.35 * s + 0.18 * s * math.sin(t * 9), cy + 0.3 * s)
+    elif pose in ('phone', 'press', 'scroll'):
+        px, py = cx + 0.32 * s, cy + 1.02 * s
+        hands = [(px - 0.2 * s, py + 0.22 * s), (px + 0.16 * s, py + 0.24 * s)]
+        extra = ('phone', px, py)
+    elif pose == 'reach':
+        hands[1] = (cx + 1.75 * s + 0.06 * s * math.sin(t * 2), cy + 0.45 * s + 0.08 * s * math.sin(t * 1.6))
+    elif pose == 'think':
+        hands[1] = (cx + 0.22 * s, cy + 0.86 * s)
+    elif pose == 'open':
+        o = 0.12 * s * math.sin(t * 2.4)
+        hands = [(cx - 1.65 * s - o, cy + 0.85 * s), (cx + 1.65 * s + o, cy + 0.85 * s)]
+    elif pose == 'carry':
+        hands = [(cx - 0.5 * s, cy + 1.6 * s), (cx + 0.5 * s, cy + 1.6 * s)]
+        extra = ('box', cx, cy + 1.45 * s)
+    elif pose == 'heart':
+        hands = [(cx - 0.18 * s, cy + 1.25 * s), (cx + 0.18 * s, cy + 1.25 * s)]
+    if extra and extra[0] == 'box':
+        ofill(cv, prr(extra[1] - 0.55 * s, extra[2] - 0.35 * s, 1.1 * s, 0.6 * s, 0.06 * s), '#C8946A', ol=OLD, w=4)
+    for k, ((sx, sy), (hx, hy)) in enumerate(zip(sh, hands)):
+        side = -1 if k == 0 else 1
+        ex, ey = (sx + hx) / 2 + side * 0.35 * s, (sy + hy) / 2 + 0.25 * s
+        noodle(cv, [(sx, sy), (ex, ey), (hx, hy)], robe, w=0.3 * s, ol=OLD)
+    if extra and extra[0] == 'phone':
+        _, px, py = extra
+        glow(cv, px, py, 0.9 * s, '#5AD7FF', 150 + 40 * math.sin(t * 7))
+        ofill(cv, prr(px - 0.17 * s, py - 0.28 * s, 0.34 * s, 0.56 * s, 0.06 * s), '#0E0E1E', ol=OLD, w=4)
+        cv.drawRect(skia.Rect.MakeXYWH(px - 0.13 * s, py - 0.22 * s, 0.26 * s, 0.44 * s), P('#9BEFFF'))
+        for j in range(4):
+            yy = py - 0.18 * s + ((j * 0.12 * s + t * 0.25 * s) % (0.4 * s)) if pose == 'scroll' else py - 0.18 * s + j * 0.1 * s
+            cv.drawRect(skia.Rect.MakeXYWH(px - 0.1 * s, yy, 0.2 * s, 0.04 * s), P('#3A6A9A', 200))
+    for k, (hx, hy) in enumerate(hands):
+        ofill(cv, pcircle(hx, hy, 0.16 * s), skin, ol=OLD, w=4)
+    if pose in ('scroll', 'press'):
+        tx, ty = hands[1]
+        dy = -0.12 * s * abs(math.sin(t * (3 if pose == 'scroll' else 6)))
+        ofill(cv, poval(tx - 0.08 * s, ty - 0.12 * s + dy, 0.06 * s, 0.09 * s), skin, ol=OLD, w=3)
+
+
 def night_bg(cv, seed, top='#05020F', mid='#1A0A3A', bottom='#3A0E4A'):
     cv.drawRect(skia.Rect.MakeWH(S, S), P(shader=lin(0, 0, 0, S, [top, mid, bottom])))
     rnd = random.Random(seed)
@@ -48,7 +95,7 @@ def moon(cv, x, y, r, drip=True):
             ofill(cv, d, '#FFF0C8', ol=OLD, w=4)
 
 
-def dreamer(cv, cx, cy, s, skin='#B48AE0', hair='#2A1050', robe='#1E5A6A', eyes='lidded', third_eye=False, hair_up=True, seed=1, t=0.0):
+def dreamer(cv, cx, cy, s, skin='#B48AE0', hair='#2A1050', robe='#1E5A6A', eyes='lidded', third_eye=False, hair_up=True, seed=1, t=0.0, arms=None, look=None):
     """Visage adulte allongé, cou long, paupières lourdes, cheveux qui flottent vers le haut. (cx,cy)=centre du visage."""
     dark = mix(skin, '#000000', 0.35)
     rnd = random.Random(seed)
@@ -114,9 +161,11 @@ def dreamer(cv, cx, cy, s, skin='#B48AE0', hair='#2A1050', robe='#1E5A6A', eyes=
                 cv.drawLine(ex - er * 0.6 + j * er * 0.4, ey + er * 0.5, ex - er * 0.7 + j * er * 0.45, ey + er * 0.8, P(OLD, 255, stroke=3))
             continue
         ofill(cv, pcircle(ex, ey, er), '#F4ECFF', ol=OLD)
-        circle(cv, ex + 0.03 * s, ey + 0.04 * s, er * 0.42, '#2DE2C6')
-        circle(cv, ex + 0.03 * s, ey + 0.04 * s, er * 0.2, OLD)
-        circle(cv, ex - er * 0.1, ey - er * 0.05, er * 0.1, '#FFFFFF')
+        lx_, ly_ = (look if look else (0.14, 0.18))
+        pxx, pyy = ex + lx_ * er * 0.42, ey + ly_ * er * 0.42
+        circle(cv, pxx, pyy, er * 0.42, '#2DE2C6')
+        circle(cv, pxx, pyy, er * 0.2, OLD)
+        circle(cv, pxx - er * 0.13, pyy - er * 0.1, er * 0.1, '#FFFFFF')
         lid = 0.55 if eyes == 'lidded' else 0.2
         cv.save(); cv.clipPath(pcircle(ex, ey, er), doAntiAlias=True)
         cv.drawRect(skia.Rect.MakeXYWH(ex - er, ey - er, 2 * er, 2 * er * lid), P(skin))
@@ -130,6 +179,8 @@ def dreamer(cv, cx, cy, s, skin='#B48AE0', hair='#2A1050', robe='#1E5A6A', eyes=
     p = skia.Path(); p.moveTo(cx - 0.02 * s, cy + 0.1 * s); p.quadTo(cx - 0.12 * s, cy + 0.38 * s, cx + 0.04 * s, cy + 0.4 * s)
     cv.drawPath(p, P(OLD, 255, stroke=5))
     cv.drawLine(cx - 0.14 * s, cy + 0.62 * s, cx + 0.12 * s, cy + 0.6 * s, P(OLD, 255, stroke=5))
+    if arms:
+        draw_arms(cv, cx, cy, s, t, arms, skin, robe)
     if third_eye:
         glow(cv, cx, cy - 0.55 * s, 0.4 * s, '#FFE680', 230)
         ofill(cv, poval(cx, cy - 0.55 * s, 0.13 * s, 0.08 * s), '#FFF6C8', ol=OLD, w=4)

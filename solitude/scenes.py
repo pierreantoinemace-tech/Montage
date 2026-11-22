@@ -13,8 +13,9 @@ night, stars, hero, OLD, ribbons = ws.night, ws.stars, ws.hero, ws.OLD, ws.ribbo
 
 FONT = None
 STYLE = dict(exclusion=True, color='#F0EBBE', size=196, maxw=1760, glitch=True, grain=7, readable=True,
-             fps=60, trans=1.0, float=True, dream=True, bloom=0.42, wobble=3,
-             trans_kinds=['dream', 'ink', 'dream', 'liquid', 'dream', 'ripple', 'dream', 'iris'])
+             fps=60, trans=0.8, float=True, dream=True, bloom=0.2, wobble=0, edge_blur=False, veil=22, leaks=40,
+             orb_soft=0.06, orb_size=0.45, dream_blur=7,
+             trans_kinds=['dream', 'ink', 'liquid', 'dream', 'ripple', 'iris', 'dream', 'ink'])
 
 
 class Scene:
@@ -34,6 +35,7 @@ FRIENDS = [('#E07AB8', '#2A0E3A', '#1E5A6A'), ('#D8B8A8', '#3A2A1A', '#2A1A5A'),
 
 
 def lantern(cv, x, y, r, col, a=255):
+    y += r * 0.25 * math.sin(x * 0.01 + y * 0.01)
     glow(cv, x, y, r * 2.6, col, 150 * a / 255)
     ofill(cv, pcircle(x, y, r), mix(col, '#FFFFFF', 0.4), a=a, ol=OLD, w=4)
     circle(cv, x, y - r * 0.15, r * 0.3, OLD, a)
@@ -42,12 +44,15 @@ def lantern(cv, x, y, r, col, a=255):
 
 def bird(cv, x, y, s, t, a=255):
     w = 0.6 * s * math.sin(t * 12)
+    cv.save(); cv.translate(x, y); cv.scale(1 + 0.12 * math.sin(t * 12), 1 - 0.12 * math.sin(t * 12)); cv.translate(-x, -y)
     glow(cv, x, y, s * 2.4, '#FFE680', 200 * a / 255)
     for side in (-1, 1):
         p = skia.Path(); p.moveTo(x, y); p.quadTo(x + side * s * 0.8, y - s * 0.4 - w, x + side * s * 1.5, y - w * 0.6)
         p.quadTo(x + side * s * 0.8, y + s * 0.1, x, y + s * 0.15); p.close()
         ofill(cv, p, '#FFF0B0', a=a, ol=OLD, w=4)
     ofill(cv, poval(x, y + s * 0.05, s * 0.35, s * 0.22), '#FFE680', a=a, ol=OLD, w=4)
+    circle(cv, x + s * 0.18, y - s * 0.02, s * 0.06, OLD, a)
+    cv.restore()
 
 
 def city(cv, seed, base=1080, lit=0.5):
@@ -83,7 +88,7 @@ class Drift(Scene):
             a = i / 5 * 6.283 + 0.6
             r = 260 + 700 * k
             lantern(cv, 960 + math.cos(a) * r, 520 + math.sin(a) * r * 0.5 - 60 * k, 38 - 10 * k, col, 255 * (1 - 0.5 * k))
-        hero(cv, t, 960, 790, 190, eyes='lidded')
+        hero(cv, t, 960, 790, 190, eyes='open', arms='reach' if t > 1.2 else None, look=(math.sin(t * 0.9) * 0.8, -0.6))
 
 
 # 2 ─ « Enfant, c'était facile. Un ballon, une cour de récré, et tu avais un meilleur ami pour la vie. »
@@ -137,7 +142,7 @@ class Conveyor(Scene):
             else:
                 ofill(cv, prr(x - 55, 790, 110, 110, 16), '#5A7ABF', ol=OLD, w=4)
                 ofill(cv, prr(x - 20, 770, 40, 26, 8), '#5A7ABF', ol=OLD, w=4)
-        hero(cv, t, 1180, 760, 150, eyes='lidded')
+        hero(cv, t, 1180, 760, 150, eyes='open', arms='carry', look=(-0.9, 0.1))
         k = ease(t / max(d, 0.1))
         ofill(cv, prr(-100, 900, 560 - 300 * k, 50, 20), '#2A1A3A', ol=OLD)
         for i, (sk, hr, rb) in enumerate(FRIENDS[:3]):
@@ -169,8 +174,11 @@ class Bubbles(Scene):
                     circle(cv, x + math.cos(a) * 80 * kk, y + math.sin(a) * 50 * kk, 6, '#BFE6FF', 255 * (1 - kk))
                 continue
             w = 330
+            sq = 1 + 0.08 * math.sin(q * 40) * max(0, 1 - q * 4)
+            cv.save(); cv.translate(x, y); cv.scale(sq, 2 - sq); cv.translate(-x, -y)
             ofill(cv, prr(x - w / 2, y - 45, w, 90, 45), '#2A3A8A' if i % 2 else '#5A2A8A', a=230, ol=OLD, w=4)
             label(cv, x, y + 10, msgs[i % 5], 26, color='#E8E4FF', font=FONT, box=False)
+            cv.restore()
 
 
 # 5 ─ « Et un samedi soir, tu fais défiler tes contacts, et tu ne sais plus qui appeler. »
@@ -194,8 +202,7 @@ class Contacts(Scene):
             ofill(cv, pcircle(px + 80, y, 30), '#3A4A7A', a=255 * a, ol=None, w=0)
             label(cv, px + 230, y + 10, names[(i + int(t * 0.9)) % len(names)], 28, color='#BFE6FF', a=200 * a * (1 - 0.5 * ease(t / max(d, 0.1))), font=FONT, box=False)
         cv.restore()
-        hero(cv, t, 620, 800, 190, eyes='lidded', third=False)
-        glow(cv, 620, 760, 260, '#5AD7FF', 80)
+        hero(cv, t, 620, 720, 170, eyes='open', third=False, arms='scroll', look=(0.5, 0.9))
 
 
 # 6 ─ « Ce n'est pas qu'une impression. »
@@ -213,7 +220,7 @@ class NotJust(Scene):
         for i in range(6):
             q = (t * 0.6 + i / 6) % 1
             cv.drawCircle(960, 690, 100 + q * 900, P('#B98CFF', 120 * (1 - q), stroke=4))
-        hero(cv, t, 960, 800, 200, eyes='open')
+        hero(cv, t, 960, 800, 200, eyes='open', arms='think', look=(0.3 * math.sin(t * 2), -0.4))
         glow(cv, 960, 800 - 0.55 * 200, 110 + 30 * math.sin(t * 4), '#FFE680', 230)
 
 
@@ -329,7 +336,7 @@ class Secret(Scene):
         for side in (-1, 1):
             x = 960 + side * (300 + 700 * k)
             cv.drawOval(skia.Rect.MakeLTRB(x - 600, 200, x + 600, 1100), P('#B98CFF', 70, blur=60))
-        hero(cv, t, 960, 800, 190, eyes='open')
+        hero(cv, t, 960, 800, 190, eyes='open', arms='open', look=(0, -0.3))
         glow(cv, 960, 800 - 0.55 * 190, 160 * k + 40, '#FFE680', 230)
 
 
@@ -386,14 +393,12 @@ class Send(Scene):
 
     def dyn(self, cv, t, d):
         self.st.draw(cv, t)
-        hero(cv, t, 560, 800, 180, eyes='open', smile=True)
-        px, py = 900, 720
-        ofill(cv, prr(px, py, 200, 340, 30), '#0E0E1E', ol=OLD)
-        cv.drawRect(skia.Rect.MakeXYWH(px + 14, py + 40, 172, 260), P('#2A3A6A'))
         k = ease_out((t - d * 0.4) / max(d * 0.5, 0.1))
-        ofill(cv, prr(px + 30, py + 220, 140, 50, 25), '#5AD7FF' if k <= 0 else '#3FD07A', ol=OLD, w=3)
+        bx, by = 680 + 900 * k, 900 - 640 * k + 40 * math.sin(t * 3)
+        hero(cv, t, 620, 720, 170, eyes='open', smile=k > 0, arms='press' if k <= 0 else 'wave',
+             look=(0.6, 0.9) if k <= 0 else (min(1, 0.4 + k), -0.8))
         if k > 0:
-            bird(cv, px + 100 + 800 * k, py + 160 - 500 * k + 40 * math.sin(t * 3), 40, t)
+            bird(cv, bx, by, 44, t)
 
 
 # 14 ─ « Le pire qui puisse arriver, c'est qu'il te réponde. »
