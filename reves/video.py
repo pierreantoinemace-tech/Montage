@@ -524,22 +524,25 @@ if __name__ == '__main__':
             arr = np.frombuffer(frame(int(float(ts) * FPS)), np.uint8).reshape(OH_, OW_, 4)
             Image.fromarray(arr[..., :3]).resize((540, 960), Image.LANCZOS).save(os.path.join(sys.argv[3], f'pv_{ts}.png'))
         sys.exit()
-    out = os.path.join(HERE, 'travail_reves_4k.mp4')
+    out = os.path.join(HERE, 'travail_reves_4k.mp4'); hd = os.path.join(HERE, 'travail_reves_1080p.mp4')
     n = int(DUR * FPS)
     ff = subprocess.Popen(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', f'{OW_}x{OH_}', '-r', str(FPS), '-i', '-',
                            '-i', os.path.join(HERE, 'voice.wav'),
-                           '-c:v', 'libx264', '-preset', 'slow', '-tune', 'animation', '-crf', '16', '-maxrate', '30M', '-bufsize', '60M',
-                           '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-t', str(DUR), '-movflags', '+faststart', out], stdin=subprocess.PIPE)
+                           '-filter_complex', '[0:v]format=yuv420p,split=2[v4][vh];[vh]scale=1080:1920:flags=lanczos[v1]',
+                           # 4K compatible téléphones : H.264 High, niveau 5.1
+                           '-map', '[v4]', '-map', '1:a', '-c:v', 'libx264', '-profile:v', 'high', '-level:v', '5.1', '-preset', 'slow', '-crf', '15',
+                           '-maxrate', '25M', '-bufsize', '50M', '-c:a', 'aac', '-b:a', '256k', '-t', str(DUR), '-movflags', '+faststart', out,
+                           # Full HD haute qualité
+                           '-map', '[v1]', '-map', '1:a', '-c:v', 'libx264', '-profile:v', 'high', '-level:v', '4.2', '-preset', 'slow', '-crf', '14',
+                           '-maxrate', '20M', '-bufsize', '40M', '-c:a', 'aac', '-b:a', '256k', '-t', str(DUR), '-movflags', '+faststart', hd],
+                          stdin=subprocess.PIPE)
     with Pool(4) as pool:
         for i, b in enumerate(pool.imap(frame, range(n), chunksize=2)):
             ff.stdin.write(b)
             if i % 300 == 0: print(i, '/', n, flush=True)
     ff.stdin.close(); ff.wait()
-    subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', out, '-vf', 'scale=1080:1920:flags=lanczos', '-c:v', 'libx264', '-profile:v', 'high',
-                    '-level', '4.1', '-crf', '18', '-preset', 'slow', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart',
-                    os.path.join(HERE, 'travail_reves_1080p.mp4')])
     # version de contrôle avec le son de référence (pour vérifier le calage, à ne pas publier)
-    subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', os.path.join(HERE, 'travail_reves_1080p.mp4'), '-i', os.path.join(HERE, '..', 'son', 'son_reference.wav'),
+    subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', hd, '-i', os.path.join(HERE, '..', 'son', 'son_reference.wav'),
                     '-filter_complex', '[1:a]volume=0.35,aresample=44100,aformat=channel_layouts=stereo[m];[0:a][m]amix=inputs=2:duration=first:normalize=0[a]',
                     '-map', '0:v', '-map', '[a]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', os.path.join(HERE, 'CONTROLE_calage_avec_son.mp4')])
     print('ok')
