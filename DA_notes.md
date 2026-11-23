@@ -26,3 +26,7 @@
 ## Son
 - L'utilisateur peut envoyer un son TikTok : on ne garde que l'audio, uniquement pour caler l'animation (transitions, pulsations, gros moments). Le son n'est PAS dans le montage final, il l'ajoute lui-même sur TikTok. La durée de la vidéo n'a pas à égaler celle du son.
 - Son actuel analysé : `son/rythme.json`.
+
+## Export
+- 4K : H.264 High niveau 5.1 (compatible téléphones), CRF 15. Full HD : H.264 High niveau 4.2, CRF 14. Audio AAC 256k.
+- Découpe de la voix : prolonger chaque phrase jusqu à la vraie fin du son (ne pas se fier aux fins de mots de whisper).
