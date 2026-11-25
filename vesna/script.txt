@@ -1,24 +1,15 @@
-[calm, intriguing] Le vingt-six janvier mille neuf cent soixante-douze, je suis tombée de dix mille mètres. Sans parachute.
+[calm, intriguing] En mille neuf cent soixante-douze, je suis tombée de dix mille mètres. Sans parachute.
 [short pause] Et je suis toujours là pour te le raconter.
 
-[casual] Je m'appelle Vesna. J'ai vingt-deux ans, je suis hôtesse de l'air.
-Et ce jour-là… j'étais même pas censée être dans cet avion. On m'avait confondue avec une autre Vesna.
+[casual] Je m'appelle Vesna, je suis hôtesse de l'air. Ce jour-là, j'étais même pas censée être dans cet avion : on m'avait confondue avec une autre Vesna.
 
-[thoughtful] On survole la Tchécoslovaquie. Je sers les passagers. Et puis… plus rien.
-[slowly] L'avion explose. En plein ciel. Tout le monde meurt. Sauf moi.
+[slowly] Au-dessus de la Tchécoslovaquie, l'avion explose. Tout le monde meurt. Sauf moi.
+[thoughtful] Coincée par un chariot de repas, je tombe dix kilomètres… dans un morceau de l'avion, jusqu'à une pente couverte de neige.
 
-[thoughtful] Je suis coincée dans un morceau de l'avion, bloquée par un chariot de repas.
-Et ce morceau tombe… dix kilomètres… avant de s'écraser sur une pente couverte de neige.
+[softly] Un villageois, Bruno, ancien infirmier de guerre, entend mes cris. Il me garde en vie.
 
-[softly] Dans le village, un homme entend des cris. Il s'appelle Bruno. Pendant la guerre, il soignait les blessés.
-Il me garde en vie jusqu'à l'arrivée des secours.
+[casual] Crâne fracturé, jambes cassées, paralysée. En quelques mois… je remarche.
 
-[casual] Crâne fracturé. Les deux jambes cassées. Trois vertèbres. Plusieurs jours dans le coma.
-Je suis paralysée… et pourtant, en quelques mois, je réapprends à marcher.
+[light, joyful] Et mon diplôme du Guinness des records ? C'est Paul McCartney qui me l'a remis. Mon idole.
 
-[warmly] Et tu sais le plus fou ? Je ne me souviens de rien. Alors je n'ai jamais eu peur de reprendre l'avion.
-
-[light, joyful] Quelques années plus tard, j'entre dans le livre Guinness des records. Et le diplôme… c'est Paul McCartney qui me le remet. Mon idole.
-
-[warmly] Alors la prochaine fois que t'as l'impression d'être tombé trop bas…
-[short pause] pense à moi.
+[warmly] Alors si un jour tu te sens tombé trop bas… [short pause] pense à moi.
