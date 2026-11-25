@@ -9,7 +9,7 @@
 - Couleurs sombres ou pâles ; on part du sombre et on finit plus pâle sur la fin positive.
 - Peu de symboles, intégrés au décor (pas de pluie de symboles).
 - Mouvement calme : légère dérive de caméra, pas de coups de zoom. Transitions en cercle ou en vague depuis le troisième œil.
-- Perso récurrent aux trois yeux (la mascotte), dont le troisième œil pulse sur les mots clés.
+- Perso récurrent aux trois yeux (la mascotte), dont le troisième œil pulse sur les mots clés. Toujours avec le haut ÉTROIT : `vertical/haut_etroit.py` (appliquer(pd)) retire les deux parties extérieures du vêtement. Ne PAS changer le visage.
 - Texte : un mot à la fois, crème (mots clés en jaune), contour sombre épais et ombre nette, à 40 % de la hauteur.
 
 ## Pour chaque nouvelle vidéo
@@ -24,9 +24,7 @@
 - Tags ElevenLabs en anglais : [curious], [casual], [thoughtful], [softly], [warmly], [sighs], [short pause].
 
 ## Son
-- L'utilisateur peut envoyer un son TikTok : on ne garde que l'audio, uniquement pour caler l'animation (transitions, pulsations, gros moments). Le son n'est PAS dans le montage final, il l'ajoute lui-même sur TikTok. La durée de la vidéo n'a pas à égaler celle du son.
-- Son actuel analysé : `son/rythme.json`.
+- NE PLUS caler sur un son : la voix reste d'un seul tenant (rythme naturel, juste 0,25 s de silence au début), sans découpe. Les scènes suivent les phrases de la voix. L'utilisateur ajoute la musique sur TikTok.
 
-## Export
-- 4K : H.264 High niveau 5.1 (compatible téléphones), CRF 15. Full HD : H.264 High niveau 4.2, CRF 14. Audio AAC 256k.
-- Découpe de la voix : prolonger chaque phrase jusqu à la vraie fin du son (ne pas se fier aux fins de mots de whisper).
+## Style d'animation
+- Plus abstrait, poétique et artistique : courants d'encre, fissures, fils de lumière, cernes d'arbre, sphères, oiseaux de papier, lucioles… Quelques images concrètes seulement.
