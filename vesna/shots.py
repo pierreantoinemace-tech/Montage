@@ -287,12 +287,132 @@ def s_fin():                           # debout sur un nuage, au lever du soleil
 globals()['s_' + SHOT]()
 
 
+# ---------------- habillage des décors (pour qu'aucun plan ne soit vide) ----------------
+def box(loc, scale, m, bev=0.06, rot=(0, 0, 0), name='bx'):
+    bpy.ops.mesh.primitive_cube_add(size=1, location=loc, rotation=rot); o = bpy.context.object; o.scale = scale; o.name = name
+    o.data.materials.append(m)
+    if bev: b = o.modifiers.new('b', 'BEVEL'); b.width = bev; b.segments = 3
+    return o
+
+
+def glow(loc, r, col, e=6): return L.sphere(loc, (r, r, r), L.mat('gl' + col, col, emit=e), seg=12, name='glow')
+
+
+def balloon(loc, col, h=1.6):
+    x, y, z = loc
+    L.sphere((x, y, z + h), (0.32, 0.3, 0.38), L.mat('bal' + col, col, rough=0.2), name='ballon')
+    L.curve([(x, y, z), (x + 0.08, y, z + h * 0.5), (x, y, z + h - 0.35)], [1, 1, 1], L.mat('fil', '#F4F0FF'), bevel=0.008, name='fil')
+
+
+def floaty(objs, amp=0.15, sp=1.0):          # léger flottement de rêve
+    base = [(o, o.location.z, o.rotation_euler.z, random.random() * 6.3) for o in objs]
+    ANIM.append(lambda t: [(setattr(o.location, 'z', z + amp * math.sin(t * sp + ph)), setattr(o.rotation_euler, 'z', rz + 0.25 * math.sin(t * sp * 0.7 + ph))) for o, z, rz, ph in base])
+
+
+def dress_hotesse():
+    rnd = random.Random(4)
+    pastel = ['#F2B8C8', '#C8B8F0', '#F8D8A8', '#B8E0E8', '#E8C0F0']
+    for k in range(9):                                     # aérogare en blocs pastel, fenêtres allumées
+        x = -14 + k * 3.4; h = rnd.uniform(2.5, 5.5)
+        box((x, 20, -2.95 + h / 2), (3.2, 2.5, h), L.mat('bat' + str(k % 5), pastel[k % 5], rough=0.5), bev=0.15)
+        for r in range(int(h / 0.9)):
+            for c_ in range(3): box((x - 0.9 + c_ * 0.9, 18.7, -2.4 + r * 0.9), (0.45, 0.05, 0.35), L.mat('fen', '#FFE7A8', emit=4), bev=0)
+    L.cyl((-7, 15, 0), 0.5, 0.35, 6, L.mat('tour', '#E8D8F0', rough=0.4), name='tour')
+    L.sphere((-7, 15, 3.4), (1.1, 1.1, 0.7), L.mat('vitre', '#8AE0F0', emit=1.5, rough=0.1), name='vigie')
+    for k in range(16):                                    # balises de piste
+        for x in (-3.2, 5.0): glow((x, -1 + k * 1.4, -2.9), 0.07, '#7FD0FF' if x < 0 else '#FFB070', 8)
+    for k in range(6): L.cloud((rnd.uniform(-14, 14), rnd.uniform(26, 34), rnd.uniform(4, 9)), rnd.uniform(1.0, 1.8), '#FFD8DC', seed=k)
+    box((2.8, 0.4, -2.55), (0.7, 0.35, 0.8), L.mat('valise', '#E8687A', rough=0.35), bev=0.1)     # sa valise
+    L.cyl((2.8, 0.4, -2.05), 0.04, 0.04, 0.3, L.mat('poignee', '#3A2A50'), name='poignee')
+    box((-1.6, 5.4, -2.0), (0.9, 2.6, 0.12), L.mat('escalier', '#F4F0FF', rough=0.4), rot=(0.55, 0, 0.12))  # passerelle
+    floaty([glow((rnd.uniform(-4, 6), rnd.uniform(1, 6), rnd.uniform(0, 3)), 0.06, '#FFF0C0', 6) for _ in range(14)], 0.3, 0.8)
+
+
+def dress_confusion():
+    rnd = random.Random(8)
+    L.stars(80, 3)
+    sheets = []
+    for k in range(14):                                    # plannings d'équipage qui volent
+        o = box((rnd.uniform(-4, 4), rnd.uniform(1.5, 5), rnd.uniform(-4, 4.5)), (0.7, 0.02, 0.95), L.mat('feuille', '#FFF8EC', rough=0.6), bev=0.01,
+                rot=(rnd.uniform(1.2, 1.9), rnd.uniform(-0.5, 0.5), rnd.uniform(-0.6, 0.6)))
+        for r in range(4): box((o.location.x, o.location.y - 0.03, o.location.z + 0.3 - r * 0.18), (0.5, 0.01, 0.05), L.mat('ligne', '#B8A8D8'), bev=0, rot=o.rotation_euler).parent = o
+        sheets.append(o)
+    floaty(sheets, 0.35, 0.9)
+    for x, col in ((-2.6, '#FFB0D0'), (2.6, '#9FE0FF')):
+        q = text3d('?', (x, 2.5, 2.4), 1.6, col, emit=2.5); sheets.append(q)
+    clouds_field(10, 3, (-6, -3.5), xr=7, yr=(1, 6), col='#E8C8F0')
+    L.orb((0, 3, 3.5), 0.25, '#FFE7A0', 5)
+
+
+def dress_cocon():
+    rnd = random.Random(2)
+    things = []
+    for k in range(10):                                    # objets de cabine qui flottent autour
+        loc = (rnd.uniform(-2.6, 2.6), rnd.uniform(-2, 1), rnd.uniform(-2.2, 2.4))
+        if k % 3 == 0: o = L.cyl(loc, 0.12, 0.09, 0.22, L.mat('tasse', '#FFFFFF', rough=0.2), name='tasse')
+        elif k % 3 == 1: o = box(loc, (0.45, 0.03, 0.6), L.mat('magazine', rnd.choice(['#F28AA8', '#8AC8F2', '#F2D08A'])), bev=0.01)
+        else: o = box(loc, (0.5, 0.04, 0.35), L.mat('plateau', '#C8C0E8', rough=0.3), bev=0.02)
+        o.rotation_euler = (rnd.uniform(0, 3), rnd.uniform(0, 3), rnd.uniform(0, 3)); things.append(o)
+    floaty(things, 0.4, 1.3)
+    for k in range(3): box((-1.0 + k * 0.75, 1.3, -0.9), (0.55, 0.5, 0.9), L.mat('siege', '#7A5AC8', rough=0.5), bev=0.12)
+    L.stars(60, 5)
+    for k in range(8): glow((rnd.uniform(-3, 3), rnd.uniform(-1, 3), rnd.uniform(-3, 3)), 0.05, '#FFE8B0', 8)
+
+
+def dress_hopital():
+    box((1.6, 5.9, 0.6), (3.0, 0.1, 2.4), L.mat('ciel', '#9FD8FF', emit=1.6), bev=0)                       # fenêtre sur le ciel
+    for z in (-0.6, 1.8): box((1.6, 5.85, z), (3.2, 0.15, 0.12), L.mat('cadre', '#FFFFFF'), bev=0.02)
+    for x in (0.0, 1.6, 3.2): box((x, 5.85, 0.6), (0.12, 0.15, 2.5), L.mat('cadre', '#FFFFFF'), bev=0.02)
+    L.cloud((1.2, 5.7, 1.0), 0.35, '#FFFFFF', seed=4); L.cloud((2.4, 5.7, 0.2), 0.28, '#FFFFFF', seed=6)
+    box((0.6, 3.2, -2.45), (0.9, 0.8, 1.1), L.mat('chevet', '#F2C8A8', rough=0.5), bev=0.08)                # table de chevet + fleurs
+    L.cyl((0.6, 3.2, -1.65), 0.14, 0.18, 0.5, L.mat('vase', '#8AC8F0', rough=0.15), name='vase')
+    for k in range(5): L.sphere((0.6 + 0.18 * math.cos(k * 1.3), 3.2 + 0.1 * math.sin(k * 1.3), -1.15 + 0.08 * k % 0.2), (0.11,) * 3,
+                                L.mat('fleur' + str(k % 3), ['#FF8AB0', '#FFD86A', '#C8A0FF'][k % 3], rough=0.4), seg=16, name='fleur')
+    for k, col in enumerate(('#FF8AB0', '#FFD86A', '#8AD8FF')): balloon((-3.6 + k * 0.45, 3.4, -1.9), col, 1.9 + 0.3 * k)   # ballons « bon rétablissement »
+    L.cyl((-3.9, 2.0, -1.0), 0.03, 0.03, 4, L.mat('perf', '#D8D8E8', metal=0.6, rough=0.2), name='perf')          # perfusion
+    L.sphere((-3.9, 2.0, 1.0), (0.2, 0.08, 0.3), L.mat('poche', '#D8F0FF', rough=0.1), name='poche')
+    box((2.6, 3.6, -0.6), (0.9, 0.3, 0.7), L.mat('ecran', '#2A2440', rough=0.3), bev=0.05)                    # moniteur avec battement
+    L.curve([(2.25, 3.42, -0.6), (2.45, 3.42, -0.6), (2.55, 3.42, -0.35), (2.65, 3.42, -0.8), (2.75, 3.42, -0.6), (2.95, 3.42, -0.6)], [1] * 6,
+            L.mat('ecg', '#7CFFB8', emit=6), bevel=0.015, name='ecg')
+    box((-0.8, 5.9, 1.6), (1.0, 0.05, 0.75), L.mat('dessin', '#FFE8C8'), bev=0.02)                           # dessin d'enfant au mur
+    L.sphere((-0.8, 5.85, 1.7), (0.18, 0.02, 0.18), L.mat('soleild', '#FFB040', emit=1), seg=16, name='d')
+
+
+def dress_marche():
+    rnd = random.Random(6)
+    for k in range(5):
+        for x in (-2.55, 2.55):
+            box((x, 3 + k * 3.2, -1.0), (0.08, 1.3, 2.6), L.mat('porte' + str(k % 3), ['#C8B8F0', '#F2C0D0', '#B8E0D8'][k % 3], rough=0.5), bev=0.03)
+            L.sphere((x * 0.96, 3.4 + k * 3.2, -1.1), (0.06,) * 3, L.mat('poignee2', '#F0D080', metal=0.8, rough=0.2), seg=12, name='p')
+    for k in range(4):
+        for x in (-2.1, 2.1): L.bulb_plant((x, 1.5 + k * 3.2, -2.6), rnd.uniform(0.9, 1.4), rnd.choice(['#FFB0D0', '#FFE08A', '#A8E8FF']), eye=False)
+    box((0, 22, 0), (5, 0.1, 6), L.mat('soleilfond', '#FFF0D0', emit=5), bev=0)                                 # lumière au bout du couloir
+    box((0, 6, -2.59), (0.25, 30, 0.01), L.mat('guide', '#FFB8D0', emit=0.4), bev=0)                            # ligne de couleur au sol
+    for k in range(3): balloon((1.7, 0.8 + k * 0.4, -2.6), ['#FF8AB0', '#FFD86A', '#8AD8FF'][k], 2.6 + 0.2 * k)
+
+
+def dress_fin():
+    rnd = random.Random(10)
+    cols = ['#FF9AB0', '#FFC890', '#FFF0A0', '#A8F0C8', '#A8D0FF', '#C8A8FF']        # arc-en-ciel doux
+    for i, col in enumerate(cols):
+        R = 9 - i * 0.45
+        L.curve([(R * math.cos(a), 22, -2 + R * math.sin(a)) for a in [math.pi * u / 8 for u in range(9)]], [1] * 9, L.mat('arc' + col, col, emit=1.4, rough=0.5), bevel=0.22, name='arc')
+    for k in range(4):
+        x = rnd.choice([-1, 1]) * rnd.uniform(2.6, 5); L.island((x, rnd.uniform(4, 12), rnd.uniform(-1.5, 2.5)), rnd.uniform(0.6, 1.0), seed=k)
+    L.stars(50, 9)
+    p = plane3d((-8, 16, 3.5), 0.45, rot=(0, 0, -0.3)); p.keyframe_insert('location', frame=1); p.location.x = -2; p.keyframe_insert('location', frame=F(DUR))
+    floaty([glow((rnd.uniform(-4, 4), rnd.uniform(-1, 5), rnd.uniform(-2, 3)), 0.06, '#FFF0C0', 7) for _ in range(16)], 0.3, 0.8)
+
+
+if 'dress_' + SHOT in globals(): globals()['dress_' + SHOT]()
+
+
 def polish():                               # rendu « film d'animation » : matières satinées, peau translucide, flou de mouvement
     ee = sc.eevee
     ee.use_motion_blur = True; ee.motion_blur_shutter = 0.45; ee.motion_blur_steps = 1
     ee.use_ssr = False
     ee.shadow_cube_size = '1024'; ee.shadow_cascade_size = '1024'; ee.gtao_distance = 0.8
-    ee.bloom_intensity = 0.08
+    ee.bloom_intensity = 0.08; sc.view_settings.look = 'High Contrast'
     for m in bpy.data.materials:
         if not m.use_nodes or 'Principled BSDF' not in m.node_tree.nodes: continue
         b = m.node_tree.nodes['Principled BSDF']
