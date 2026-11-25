@@ -209,11 +209,11 @@ def world(top, bottom, strength=1.0):
 
 
 def lights(key='#FFD2B0', rim='#8A7CFF', fill='#5AD7FF', k=1.0):
-    def area(loc, rot, size, energy, col):
-        bpy.ops.object.light_add(type='AREA', location=loc, rotation=rot); L = bpy.context.object
+    def area(loc, rot, size, energy, col, name='l'):
+        bpy.ops.object.light_add(type='AREA', location=loc, rotation=rot); L = bpy.context.object; L.name = name
         L.data.size = size; L.data.energy = energy * k; c = col.lstrip('#'); L.data.color = tuple(int(c[i:i + 2], 16) / 255 for i in (0, 2, 4))
     area((-4, -5, 3), (math.radians(60), 0, math.radians(-38)), 4, 900, key)
-    area((4.5, 3, 3), (math.radians(-60), 0, math.radians(130)), 3, 1300, rim)
+    area((4.5, 3, 3), (math.radians(-60), 0, math.radians(130)), 3, 1300, rim, 'rim')
     area((3, -5, -1), (math.radians(95), 0, math.radians(30)), 5, 300, fill)
 
 

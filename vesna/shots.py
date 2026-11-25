@@ -8,9 +8,9 @@ from mathutils import Vector
 a = sys.argv[sys.argv.index('--') + 1:]
 SHOT, DUR, OUT, RX, RY = a[0], float(a[1]), a[2], int(a[3]), int(a[4])
 PREV = float(a[5]) if len(a) > 5 else None
-FPS = 12
+FPS = 30
 N = max(2, int(round(DUR * FPS)))
-sc = L.setup(RX, RY, samples=12, fps=FPS)
+sc = L.setup(RX, RY, samples=int(__import__('os').environ.get('SAMPLES','32')), fps=FPS)
 sc.frame_start, sc.frame_end = 1, N
 VESNA = dict(robe='#5A3AA8', hat='toque', hair_cols=('#3A2470', '#C080E0'), nhair=24)
 ANIM = []                                   # fonctions t -> mises à jour par image
@@ -285,9 +285,35 @@ def s_fin():                           # debout sur un nuage, au lever du soleil
 
 
 globals()['s_' + SHOT]()
+
+
+def polish():                               # rendu « film d'animation » : matières satinées, peau translucide, flou de mouvement
+    ee = sc.eevee
+    ee.use_motion_blur = True; ee.motion_blur_shutter = 0.45; ee.motion_blur_steps = 1
+    ee.use_ssr = False
+    ee.shadow_cube_size = '1024'; ee.shadow_cascade_size = '1024'; ee.gtao_distance = 0.8
+    ee.bloom_intensity = 0.08
+    for m in bpy.data.materials:
+        if not m.use_nodes or 'Principled BSDF' not in m.node_tree.nodes: continue
+        b = m.node_tree.nodes['Principled BSDF']
+        if b.inputs['Emission Strength'].default_value > 0: continue
+        r = b.inputs['Roughness'].default_value
+        b.inputs['Roughness'].default_value = max(0.22, r * 0.72)
+        b.inputs['Sheen Weight'].default_value = 0.12; b.inputs['Sheen Roughness'].default_value = 0.4
+        if m.name.startswith('skin'):
+            b.inputs['Subsurface Weight'].default_value = 0.3; b.inputs['Subsurface Radius'].default_value = (0.4, 0.25, 0.18)
+            b.inputs['Coat Weight'].default_value = 0.12; b.inputs['Coat Roughness'].default_value = 0.25
+        elif m.name.startswith('hair'):
+            b.inputs['Coat Weight'].default_value = 0.25; b.inputs['Coat Roughness'].default_value = 0.2
+    for o in bpy.data.objects:                 # lumières de contour un peu plus présentes
+        if o.type == 'LIGHT' and 'rim' in o.name.lower(): o.data.energy *= 1.35
+
+
+polish()
 L.on_frame(lambda t: (L.animate_hair(t), [f(t) for f in ANIM]) if SHOT in ('chute', 'cocon') else (L.animate_hair(t), L.blink(t), [f(t) for f in ANIM]))
 if PREV is not None:
     sc.frame_set(int(F(PREV))); sc.render.filepath = OUT; bpy.ops.render.render(write_still=True)
 else:
     sc.render.filepath = OUT + '/f_'; sc.render.image_settings.file_format = 'PNG'
+    sc.render.use_overwrite = False; sc.render.use_placeholder = True   # reprise possible : saute les images déjà faites
     bpy.ops.render.render(animation=True)
