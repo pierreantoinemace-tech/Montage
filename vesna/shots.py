@@ -407,17 +407,138 @@ def dress_fin():
 if 'dress_' + SHOT in globals(): globals()['dress_' + SHOT]()
 
 
+# ---------------- remplissage : arrière-plans en couches + premiers plans flous ----------------
+def mountains(y, n, col, h=(4, 9), z0=-3, xr=30, seed=1, snow=False):
+    rnd = random.Random(seed)
+    for k in range(n):
+        x = -xr + 2 * xr * k / max(1, n - 1) + rnd.uniform(-2, 2); hh = rnd.uniform(*h)
+        L.cyl((x, y + rnd.uniform(-3, 3), z0 + hh / 2), hh * 0.6, 0.0, hh, L.mat('mont' + col, col, rough=0.8), name='mont')
+        if snow: L.cyl((x, y - 0.2, z0 + hh * 0.88), hh * 0.15, 0.0, hh * 0.24, L.mat('neige_sommet', '#F4F4FF', rough=0.6), name='neige')
+
+
+def cloud_bank(y, z, col, n=10, xr=16, seed=3, s=(1.6, 2.8)):
+    rnd = random.Random(seed)
+    for k in range(n): L.cloud((-xr + 2 * xr * k / (n - 1), y + rnd.uniform(-2, 2), z + rnd.uniform(-1, 1.5)), rnd.uniform(*s), col, seed=seed * 10 + k)
+
+
+def cam_place(x, y, d):                       # position dans le repère caméra (x, y en écran, d = distance)
+    sc.frame_set(int(F(DUR / 2))); return tuple(sc.camera.matrix_world @ Vector((x * d, y * d, -d)))
+
+
+def fg_clouds(col='#FFE6EE', n=3, seed=5):
+    rnd = random.Random(seed)
+    for k in range(n):
+        sx = rnd.choice([-1, 1]) * rnd.uniform(0.4, 0.5); L.cloud(cam_place(sx, rnd.uniform(-0.8, -0.4) if k % 2 else rnd.uniform(0.5, 0.8), 2.6), rnd.uniform(0.18, 0.26), col, seed=seed + k)
+
+
+def fg_plants(n=4, seed=7, cols=('#FF8AB0', '#FFD86A', '#8AD8FF')):
+    rnd = random.Random(seed)
+    for k in range(n):
+        x, y, z = cam_place(rnd.choice([-1, 1]) * rnd.uniform(0.28, 0.42), -0.85, 2.8); L.bulb_plant((x, y, z - 0.4), rnd.uniform(0.6, 1.1), rnd.choice(cols), eye=False)
+
+
+def lamp_post(x, y, z0, h=3.2, col='#FFD890'):
+    L.cyl((x, y, z0 + h / 2), 0.05, 0.05, h, L.mat('poteau', '#3A3050', rough=0.4, metal=0.5), name='poteau'); L.orb((x, y, z0 + h + 0.1), 0.16, col, 7)
+
+
+def fill_chute():
+    L.stars(120, 12); L.big_moon((-6, 40, 12), 5, '#F6D8E8')
+    cloud_bank(30, -6, '#E8A8C8', 12, seed=2); cloud_bank(22, 6, '#F4C0D8', 8, seed=4)
+    for k in range(6): L.orb((random.Random(k).uniform(-5, 5), random.Random(k + 9).uniform(8, 16), random.Random(k + 3).uniform(-3, 6)), 0.12, '#FFE7A0', 4)
+
+
+def fill_hotesse():
+    mountains(45, 12, '#7A5A8A', (6, 12), seed=2); mountains(38, 10, '#9A6A8A', (3, 7), seed=5)
+    cloud_bank(42, 9, '#FFC0B0', 9, seed=6)
+    for k in range(5):
+        lamp_post(-4.2, 1 + k * 3.5, -2.95); lamp_post(6.4, 1 + k * 3.5, -2.95)
+    for k in range(4): L.cyl((-2.6 + k * 0.5, -0.8, -2.7), 0.18, 0.02, 0.5, L.mat('plot', '#FF7A3A', rough=0.4), name='plot')
+    for k in range(2):                                     # chariots à bagages
+        box((4.2 + k * 1.6, 3, -2.6), (1.3, 0.8, 0.12), L.mat('chariot2', '#4A6AC8', rough=0.4), bev=0.03)
+        for j in range(3): box((3.8 + k * 1.6 + j * 0.4, 3, -2.3), (0.35, 0.5, 0.45), L.mat('bag' + str(j), ['#E8687A', '#F2C04A', '#5AC8A8'][j], rough=0.4), bev=0.06)
+    fg_clouds('#FFD0C8', 2)
+
+
+def fill_confusion():
+    L.big_moon((4, 30, 8), 3, '#F0D8FF'); cloud_bank(20, -5, '#B890D8', 10, seed=7); fg_clouds('#E8C8F0', 3)
+
+
+def fill_explosion(): fg_clouds('#FFD8E0', 2, seed=11)
+
+
+def fill_cocon():
+    L.big_moon((5, 35, 9), 4, '#F6E0F0'); cloud_bank(25, -8, '#C8A0D8', 12, seed=8); cloud_bank(30, 4, '#E8B8D8', 8, seed=9)
+    fg_clouds('#F4D8E8', 3, seed=12)
+
+
+def fill_neige():
+    mountains(30, 10, '#2A3A6A', (5, 10), z0=-4, seed=3, snow=True)
+    L.big_moon((-5, 34, 9), 2.5, '#FFF0D0')
+    for k in range(10):
+        x, y, z = cam_place(random.Random(k).choice([-1, 1]) * random.Random(k + 1).uniform(0.3, 0.5), -0.9, random.Random(k + 2).uniform(3, 6))
+        pine((x, y, -3.0), random.Random(k + 4).uniform(1.6, 2.6))
+    for k in range(5): box((3.5 + k * 1.5, 14 + k, -2.2), (1.0, 1.0, 0.9), L.mat('chalet', '#8A5A4A', rough=0.6), bev=0.05)
+
+
+def fill_hopital():
+    for k in range(9): L.cyl((-4.6 + k * 0.22, 5.8, 0.6), 0.14, 0.14, 4.2, L.mat('rideau', '#E8A0B8', rough=0.7), name='rideau')    # rideau plissé
+    box((-0.8, 5.8, -0.2), (2.0, 0.4, 0.08), L.mat('etagere', '#B88A6A'), bev=0.02)
+    for k in range(7): box((-1.6 + k * 0.24, 5.75, 0.1), (0.16, 0.3, 0.5 + 0.1 * (k % 3)), L.mat('livre' + str(k % 4), ['#E85A6A', '#4A8AE8', '#F2C04A', '#5AC88A'][k % 4]), bev=0.01)
+    for k in range(11):                                    # guirlande d'étoiles en papier
+        a = k / 10; x = -4 + 8 * a; z = 2.6 - 0.6 * math.sin(a * math.pi)
+        L.sphere((x, 5.6, z), (0.12, 0.04, 0.12), L.mat('guir' + str(k % 3), ['#FFD86A', '#FF8AB0', '#8AD8FF'][k % 3], emit=1.5), seg=8, name='g')
+    L.orb((-1.6, 3, 3.6), 0.3, '#FFF0D0', 4)
+    box((0, 5.8, -2.0), (12, 0.1, 1.2), L.mat('lambris', '#8A7AB8', rough=0.6), bev=0)
+    box((3.6, 1.8, -2.3), (0.9, 0.9, 1.3), L.mat('fauteuil', '#E8687A', rough=0.5), bev=0.15)
+    fg_plants(3, seed=8)
+
+
+def fill_marche():
+    for k in range(7): box((0, 1 + k * 3, 2.2), (1.6, 0.4, 0.06), L.mat('plafonnier', '#FFF4D8', emit=4), bev=0)
+    for k in range(4):
+        for x in (-2.55, 2.55): box((x * 0.99, 4.6 + k * 3.2, 0.6), (0.05, 0.9, 0.7), L.mat('affiche' + str(k % 3), ['#5AC8A8', '#F2C04A', '#E85A8A'][k % 3], emit=0.3), bev=0.01)
+    fg_plants(4, seed=9)
+
+
+def fill_guinness(): pass
+
+
+def fill_fin():
+    cloud_bank(30, -4, '#F0B8C8', 12, seed=13); cloud_bank(26, 6, '#FFD0B8', 8, seed=14)
+    for k in range(8):                                     # lanternes qui montent
+        r = random.Random(k + 30); x, y, z = r.uniform(-5, 5), r.uniform(4, 14), r.uniform(-3, 2)
+        o = L.sphere((x, y, z), (0.16, 0.16, 0.22), L.mat('lanterne', '#FFB050', emit=6), seg=16, name='lanterne')
+        o.keyframe_insert('location', frame=1); o.location.z = z + DUR * 0.5; o.keyframe_insert('location', frame=F(DUR))
+    fg_clouds('#FFE0E8', 3, seed=15)
+
+
+globals()['fill_' + SHOT]()
+
+
 def polish():                               # rendu « film d'animation » : matières satinées, peau translucide, flou de mouvement
     ee = sc.eevee
     ee.use_motion_blur = True; ee.motion_blur_shutter = 0.45; ee.motion_blur_steps = 1
     ee.use_ssr = False
     ee.shadow_cube_size = '1024'; ee.shadow_cascade_size = '1024'; ee.gtao_distance = 0.8
-    ee.bloom_intensity = 0.08; sc.view_settings.look = 'High Contrast'
+    ee.bloom_intensity = 0.08; sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = 'AgX - Punchy'; sc.view_settings.exposure = -0.35
+    w = bpy.context.scene.world                 # ciel plus profond et plus saturé
+    if w and w.use_nodes:
+        for nd in w.node_tree.nodes:
+            if nd.type == 'BACKGROUND': nd.inputs['Strength'].default_value *= 0.7
+            if nd.type == 'VALTORGB':
+                for el in nd.color_ramp.elements:
+                    c = el.color; m_ = sum(c[:3]) / 3; el.color = tuple(max(0, m_ + (x - m_) * 1.8) * 0.75 for x in c[:3]) + (1,)
     for m in bpy.data.materials:
         if not m.use_nodes or 'Principled BSDF' not in m.node_tree.nodes: continue
         b = m.node_tree.nodes['Principled BSDF']
-        if b.inputs['Emission Strength'].default_value > 0: continue
+        if b.inputs['Emission Strength'].default_value > 0:
+            if m.name.startswith('soleil'): b.inputs['Emission Strength'].default_value *= 2.5
+            continue
         r = b.inputs['Roughness'].default_value
+        if not m.name.startswith(('skin', 'eye', 'iris', 'pupil', 'white', 'cloud', 'neige', 'snow')):   # décors : couleurs franches, moins pâles
+            c = b.inputs['Base Color'].default_value; mx = max(c[:3]); mn = min(c[:3])
+            if mx > 0.35 and (mx - mn) / mx < 0.6:
+                m_ = sum(c[:3]) / 3; b.inputs['Base Color'].default_value = tuple(max(0, m_ + (x - m_) * 1.9) * 0.62 for x in c[:3]) + (1,)
         b.inputs['Roughness'].default_value = max(0.22, r * 0.72)
         b.inputs['Sheen Weight'].default_value = 0.12; b.inputs['Sheen Roughness'].default_value = 0.4
         if m.name.startswith('skin'):
@@ -425,6 +546,10 @@ def polish():                               # rendu « film d'animation » : mat
             b.inputs['Coat Weight'].default_value = 0.12; b.inputs['Coat Roughness'].default_value = 0.25
         elif m.name.startswith('hair'):
             b.inputs['Coat Weight'].default_value = 0.25; b.inputs['Coat Roughness'].default_value = 0.2
+    ch = [o for o in bpy.data.objects if o.name.startswith('char')]     # mise au point sur le perso : premiers plans flous
+    cam = sc.camera
+    if ch and cam:
+        cam.data.dof.use_dof = True; cam.data.dof.focus_object = ch[0]; cam.data.dof.aperture_fstop = 2.2
     for o in bpy.data.objects:                 # lumières de contour un peu plus présentes
         if o.type == 'LIGHT' and 'rim' in o.name.lower(): o.data.energy *= 1.35
 
