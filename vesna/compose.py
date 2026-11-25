@@ -103,7 +103,7 @@ def draw_word(cv, t):
 
 
 def frame(fi):
-    arr = np.ascontiguousarray(base(fi))
+    arr = np.array(base(fi), np.uint8, copy=True, order="C")
     surf = skia.Surface(arr)                     # dessine directement sur l'image
     cv = surf.getCanvas(); cv.scale(OW / W, OH / H)
     draw_word(cv, fi / FPS)
