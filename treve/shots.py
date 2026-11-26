@@ -548,7 +548,7 @@ def polish():
     ee = sc.eevee
     ee.use_motion_blur = True; ee.motion_blur_shutter = 0.45; ee.motion_blur_steps = 1
     ee.gtao_distance = 0.8; ee.bloom_intensity = 0.1
-    sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = 'AgX - Punchy'; sc.view_settings.exposure = -0.2
+    sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = 'AgX - Punchy'; sc.view_settings.exposure = -0.5
     for m in bpy.data.materials:
         if not m.use_nodes or 'Principled BSDF' not in m.node_tree.nodes: continue
         b = m.node_tree.nodes['Principled BSDF']
