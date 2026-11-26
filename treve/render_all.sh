@@ -7,6 +7,6 @@ for p in $PLANS; do
   want=$(python3 -c "print(max(2,int(round($d*30))))"); have=$(find work/frames/$n -name 'f_*.png' -size +1k | wc -l)
   [ "$have" -ge "$want" ] && continue
   find work/frames/$n -name 'f_*.png' -size -1k -delete
-  echo "== $n ($have/$want)"; SAMPLES=24 blender -b --python shots.py -- $n $d work/frames/$n 1080 1920 2>&1 | grep -E "^Saved|Error|Traceback" | tail -n 2
+  echo "== $n ($have/$want)"; SAMPLES=18 blender -b --python shots.py -- $n $d work/frames/$n 1080 1920 2>&1 | grep -E "^Saved|Error|Traceback" | tail -n 2
 done
 echo FINI

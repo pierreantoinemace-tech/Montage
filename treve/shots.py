@@ -79,7 +79,7 @@ def soldier(x, y, s=0.5, side='en', rot=0.0, z=0.0, eyes='open', look=(0, 0), he
     before = set(bpy.data.objects)
     root = L.character((0, 0, Z), s, 0, eyes, old=old, look=look, robe=UNIF[side], nhair=0, body=True, hair_cols=('#5A3A24', '#7A5234'))
     for o in list(root.children):                                   # bras refaits (animés), lumière du 3e œil seulement pour les héros
-        if o.name.startswith(('arm', 'hand')) or (o.type == 'LIGHT' and not hero): bpy.data.objects.remove(o, do_unlink=True)
+        if o.name.startswith(('arm', 'hand')) or o.type == 'LIGHT': bpy.data.objects.remove(o, do_unlink=True)
     kids = []
     um = M('unif' + side, UNIF[side], rough=0.75)
     if hat:
@@ -116,7 +116,7 @@ def soldier(x, y, s=0.5, side='en', rot=0.0, z=0.0, eyes='open', look=(0, 0), he
     ph = R.uniform(0, 6.28)
     seq = poses or [(0, pose)]
     fns = [(t0, pose_fn(p, ph)) for t0, p in seq]
-    info = dict(root=root, arms=arms, P=P, base=(x, y, z), path=path, bob=bob, ph=ph, fns=fns, mouth=mouth, s=s)
+    info = dict(hero=hero, root=root, arms=arms, P=P, base=(x, y, z), path=path, bob=bob, ph=ph, fns=fns, mouth=mouth, s=s)
     SOLDIERS.append(info)
     return info
 
@@ -154,7 +154,7 @@ ANIM.append(update_soldiers)
 # ---------------- accessoires vivants ----------------
 def flicker_light(loc, col, e, r=0.1):
     bpy.ops.object.light_add(type='POINT', location=loc); lt = bpy.context.object; lt.data.energy = e
-    c = col.lstrip('#'); lt.data.color = tuple(int(c[i:i + 2], 16) / 255 for i in (0, 2, 4)); lt.data.shadow_soft_size = r
+    c = col.lstrip('#'); lt.data.color = tuple(int(c[i:i + 2], 16) / 255 for i in (0, 2, 4)); lt.data.shadow_soft_size = r; lt.data.use_shadow = False
     ph = R.uniform(0, 9)
     ANIM.append(lambda t: setattr(lt.data, 'energy', e * (0.85 + 0.1 * math.sin(t * 13 + ph) + 0.06 * math.sin(t * 31 + ph * 2))))
     return lt
@@ -248,8 +248,8 @@ def notes_flow(src, n=10, spread=(3, 1), rise=3.0, drift=(0, -2), s=0.3, speed=0
 def snowfall(n, seed, bx, speed=0.5):
     rnd = random.Random(seed); m = M('flocon', '#FFFFFF', emit=0.8); fl = []
     for _ in range(n):
-        bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1, radius=rnd.uniform(0.015, 0.04), location=(0, 0, 0))
-        o = bpy.context.object; o.data.materials.append(m)
+        bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2, radius=rnd.uniform(0.012, 0.03), location=(0, 0, 0))
+        o = bpy.context.object; bpy.ops.object.shade_smooth(); o.data.materials.append(m)
         fl.append((o, rnd.uniform(bx[0], bx[1]), rnd.uniform(bx[2], bx[3]), rnd.uniform(bx[4], bx[5]), rnd.uniform(0, 6)))
     def up(t):
         h = bx[5] - bx[4]
@@ -560,7 +560,7 @@ def polish():
         if m.name.startswith('skin'):
             b.inputs['Subsurface Weight'].default_value = 0.3; b.inputs['Subsurface Radius'].default_value = (0.4, 0.25, 0.18)
             b.inputs['Coat Weight'].default_value = 0.12; b.inputs['Coat Roughness'].default_value = 0.25
-    heroes = [i for i in SOLDIERS if any(o.type == 'LIGHT' for o in i['root'].children)]
+    heroes = [i for i in SOLDIERS if i.get('hero')]
     cam = sc.camera
     if heroes and cam and SHOT not in ('front',):
         cam.data.dof.use_dof = True; cam.data.dof.focus_object = heroes[0]['root']; cam.data.dof.aperture_fstop = 2.4
@@ -570,7 +570,7 @@ def polish():
         if o.type == 'LIGHT' and 'rim' in o.name.lower(): o.data.energy *= 1.4
     w = sc.world
     if day and w and w.use_nodes: w.node_tree.nodes['Background'].inputs['Strength'].default_value *= 0.7
-    ee.shadow_cube_size = '2048'; ee.shadow_cascade_size = '2048'; ee.use_soft_shadows = True
+    ee.shadow_cube_size = '1024'; ee.shadow_cascade_size = '2048'; ee.use_soft_shadows = True
     ee.gtao_distance = 1.0; ee.gtao_factor = 1.2
 
 
