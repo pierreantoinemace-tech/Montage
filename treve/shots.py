@@ -61,8 +61,8 @@ def pose_fn(kind, ph=0.0):
         if kind == 'wave':
             return (0.55 + 0.18 * math.sin(t * 9 + ph), -0.1, 0.9) if sx > 0 else (-0.22, -0.15, -1.15)
         if kind == 'cheer': return (0.5 * sx, -0.1, 0.65 + 0.25 * abs(math.sin(t * 5 + ph + sx)))
-        if kind == 'give': return (0.12, -0.95, -0.35) if sx > 0 else (-0.22, -0.15, -1.15)
-        if kind == 'take': return (-0.12, -0.95, -0.4) if sx < 0 else (0.22, -0.15, -1.15)
+        if kind == 'give': return (0.05, -1.15, -0.2) if sx > 0 else (-0.22, -0.15, -1.15)
+        if kind == 'take': return (-0.05, -1.15, -0.25) if sx < 0 else (0.22, -0.15, -1.15)
         if kind == 'sing': return (0.14 * sx, -0.55, -0.6 + 0.06 * math.sin(t * 4 + ph))
         if kind == 'run': return (0.25 * sx, -0.15 + 0.4 * math.sin(t * 11 + ph + (math.pi if sx > 0 else 0)), -0.95)
         if kind == 'laugh': return (0.25 * sx, -0.35, -0.9 + 0.08 * math.sin(t * 12 + ph))
@@ -77,7 +77,7 @@ def soldier(x, y, s=0.5, side='en', rot=0.0, z=0.0, eyes='open', look=(0, 0), he
     Z = 2.8 * s
     P = lambda px, py, pz: (px * s, py * s, Z + pz * s)
     before = set(bpy.data.objects)
-    root = L.character((0, 0, Z), s, 0, eyes, old=old, look=look, robe=UNIF[side], nhair=0, body=True)
+    root = L.character((0, 0, Z), s, 0, eyes, old=old, look=look, robe=UNIF[side], nhair=0, body=True, hair_cols=('#5A3A24', '#7A5234'))
     for o in list(root.children):                                   # bras refaits (animés), lumière du 3e œil seulement pour les héros
         if o.name.startswith(('arm', 'hand')) or (o.type == 'LIGHT' and not hero): bpy.data.objects.remove(o, do_unlink=True)
     kids = []
@@ -191,7 +191,6 @@ def brazier(loc, s=1.0):
     flames(fl)
     flicker_light((x, y, z + 1.0 * s), '#FF8A40', 180 * s, 0.25)
     sparks(loc=(x, y, z + 0.9 * s), n=10, rise=1.6 * s)
-    smoke((x, y, z + 1.2 * s), n=6, s=0.25 * s)
 
 
 def sparks(loc, n=10, rise=1.5):
@@ -222,7 +221,7 @@ def breath(info, every=1.8):
     def up(t):
         for o, ph in ps:
             u = ((t + info['ph']) / every + ph) % 1.0
-            o.location = P(0.05 * math.sin(ph * 9), -0.85 - 0.6 * u, -0.5 + 0.35 * u); k = 0.16 * s * math.sin(math.pi * u) ** 0.7; o.scale = (k, k * 0.8, k)
+            o.location = P(0.05 * math.sin(ph * 9), -0.85 - 0.6 * u, -0.5 + 0.35 * u); k = 0.07 * s * math.sin(math.pi * u) ** 0.7; o.scale = (k, k * 0.8, k)
     ANIM.append(up)
 
 
@@ -325,8 +324,8 @@ def s_poignee():                          # accroche : la poignée de main au mi
     for k in range(5): stump((R.choice([-1, 1]) * R.uniform(4, 9), R.uniform(3, 10), 0), R.uniform(0.8, 1.6))
     crater((-3.5, 6, 0.05), 0.9); crater((4, 4, 0.05), 0.7)
     L.sphere((6, 40, 6), (4, 4, 4), M('soleil', '#FFD8A0', emit=4), name='soleil')
-    en = soldier(-0.62, 0, 0.55, 'en', rot=-0.95, hero=True, poses=[(0, 'down'), (0.6, 'give')], scarf='#B83A3A')
-    de = soldier(0.62, 0, 0.55, 'de', rot=0.95, hero=True, poses=[(0, 'down'), (0.6, 'take')], mous='#3A2A20', scarf='#3A5AA8')
+    en = soldier(-0.62, 0, 0.55, 'en', rot=0.95, hero=True, poses=[(0, 'down'), (0.6, 'give')], scarf='#B83A3A')
+    de = soldier(0.62, 0, 0.55, 'de', rot=-0.95, hero=True, poses=[(0, 'down'), (0.6, 'take')], mous='#3A2A20', scarf='#3A5AA8')
     for i in (en, de): breath(i)
     for k in range(14):                    # foule mélangée qui discute derrière
         side = 'en' if k % 2 else 'de'; x = -6 + k * 0.9 + R.uniform(-0.2, 0.2); y = R.uniform(3, 7)
@@ -376,7 +375,7 @@ def s_nuit():                             # les sapins illuminés en face, « Do
     sandbags(-4, 4, -0.6, rows=4)          # notre parapet au premier plan
     a1 = soldier(-0.9, -1.4, 0.5, 'en', z=-0.35, hero=True, look=(0, 0.3), pose='down', scarf='#B83A3A'); breath(a1)
     a2 = soldier(1.0, -1.5, 0.5, 'en', z=-0.4, look=(0, 0.3), pose='point'); breath(a2)
-    notes_flow((0, 14, 2.0), n=16, spread=(9, 0.5), rise=4.0, drift=(0, -9), s=0.45, speed=0.16)
+    notes_flow((0, 14, 2.0), n=18, spread=(9, 0.5), rise=3.5, drift=(0, -5), s=0.3, speed=0.16)
     snowfall(240, 5, (-6, 6, -1, 14, -0.2, 6), 0.35)
     c = mkcam(32); cam_path(c, (0, -5.2, 1.5), (0, -4.6, 2.0), (0, 8, 1.4), (0, 8, 1.6))
 
@@ -393,7 +392,7 @@ def s_chant():                            # les Anglais chantent à leur tour
         i = soldier(-2.6 + k * 1.0, 0.4 + 0.25 * (k % 2), 0.48, 'en', rot=R.uniform(-0.25, 0.25), pose='sing', sing=True, hero=k == 2,
                     path=(lambda ph: (lambda t: (0.06 * math.sin(t * 2.0 + ph), 0, 0)))(k * 0.7), scarf=SCARVES[k % 5])
         breath(i)
-    notes_flow((-0.5, 0.6, 2.4), n=12, spread=(3, 0.3), rise=3.5, drift=(0, 4), s=0.35, speed=0.2)
+    notes_flow((-0.5, 0.8, 2.2), n=12, spread=(3, 0.3), rise=2.5, drift=(0, 3), s=0.22, speed=0.2)
     snowfall(200, 6, (-4, 4, -2, 2, 0, 5), 0.35)
     c = mkcam(32); cam_path(c, (-1.2, -4.6, 1.6), (0.6, -4.2, 1.7), (-0.4, 0.6, 1.4), (0.2, 0.6, 1.4))
 
@@ -414,11 +413,11 @@ def s_sortie():                           # au matin, un Allemand sort les mains
         sp = R.uniform(1.0, 1.8)
         soldier(x, 12.4, 0.45, 'de', rot=R.uniform(-0.3, 0.3), poses=[(0, 'up'), (t0 + 1.2, R.choice(['wave', 'up', 'cheer']))],
                 path=(lambda t0, sp: (lambda t: (0, -max(0, t - t0 - 0.5) * sp, -1.6 * (1 - ease((t - t0) / 0.5)))))(t0, sp))
-    sandbags(-5, 5, -0.8, rows=3)
+    sandbags(-5, 5, -0.8, rows=2)
     for k, x in enumerate((-1.6, 1.7)):
         soldier(x, -1.6, 0.5, 'en', z=-0.3, look=(0, 0.4), poses=[(0, 'down'), (DUR * 0.6 + k * 0.3, 'wave')])
     snowfall(160, 8, (-6, 6, -1, 12, -0.2, 5), 0.3)
-    c = mkcam(35); cam_path(c, (0, -5.5, 1.5), (0, -4.4, 1.6), (0, 8, 1.2), (0, 6, 1.1))
+    c = mkcam(35); cam_path(c, (0, -5.5, 2.3), (0, -4.4, 2.2), (0, 8, 1.0), (0, 6, 0.9))
 
 
 def s_echanges():                         # chocolat, cigarettes, boutons… et les morts enterrés ensemble
@@ -431,8 +430,8 @@ def s_echanges():                         # chocolat, cigarettes, boutons… et 
     pairs = [(-1.9, 0.4), (0.0, -0.4), (1.9, 0.4)]
     for k, (x, y) in enumerate(pairs):
         tsw = DUR * (0.25 + 0.2 * k)
-        g = soldier(x - 0.5, y, 0.5, 'en', rot=-0.9, hero=k == 1, poses=[(0, 'down'), (tsw - 1.0, 'give'), (tsw + 0.8, 'laugh')])
-        r_ = soldier(x + 0.5, y, 0.5, 'de', rot=0.9, poses=[(0, 'down'), (tsw - 0.7, 'take'), (tsw + 0.8, 'laugh')], mous='#3A2A20' if k != 1 else None)
+        g = soldier(x - 0.5, y, 0.5, 'en', rot=0.9, hero=k == 1, poses=[(0, 'down'), (tsw - 1.0, 'give'), (tsw + 0.8, 'laugh')])
+        r_ = soldier(x + 0.5, y, 0.5, 'de', rot=-0.9, poses=[(0, 'down'), (tsw - 0.7, 'take'), (tsw + 0.8, 'laugh')], mous='#3A2A20' if k != 1 else None)
         breath(g); breath(r_)
         it = items[k][1]((x, y, 1.0))
         def follow(t, it=it, g=g, r_=r_, tsw=tsw):
@@ -452,8 +451,8 @@ def s_echanges():                         # chocolat, cigarettes, boutons… et 
 
 
 def s_foot():                             # le match dans la neige
-    L.world('#5A80D0', '#FFE8D0', 1.2); L.lights(key='#FFE8D0', rim='#B0C0FF', fill='#FFD8E0', k=1.2)
-    ground('#F0F2FC', bump=0.25)
+    L.world('#2A50B0', '#FFC8A0', 0.9); L.lights(key='#FFD8B0', rim='#B0C0FF', fill='#8AA0E0', k=0.9)
+    ground('#DDE2F4', bump=0.25)
     def bpath(t): return (2.6 * math.sin(t * 0.9), 1.0 + 0.8 * math.sin(t * 1.7), 0.13 + 0.5 * abs(math.sin(t * 3.0)))
     b = ball((0, 1, 0.13))
     def mv(t): b.location = bpath(t); b.rotation_euler = (t * 7, t * 3, 0)
@@ -478,20 +477,20 @@ def s_foot():                             # le match dans la neige
 
 def s_front():                            # vue du ciel : tout le front s'arrête
     L.world('#2A3A80', '#FF9A70', 1.1); L.lights(key='#FFC8A0', rim='#A0B0FF', fill='#FFA0C0', k=1.3)
-    ground('#E8ECF8', size=200, bump=0.6)
+    ground('#DDE4F8', size=200, bump=0.6)
     for side, y0 in (('de', 9), ('en', -9)):
         pts = [(x, y0 + 1.6 * ((x // 3) % 2), 0.05) for x in range(-60, 61, 3)]
-        L.curve(pts, [1] * len(pts), M('tranchee', '#4A3A30', rough=0.9), bevel=0.9, name='tranchee')
+        L.curve(pts, [1] * len(pts), M('tranchee', '#4A3A30', rough=0.9), bevel=0.45, name='tranchee')
     for k in range(26): xmas_tree((R.uniform(-40, 40), R.choice([7.5, -7.5]) + R.uniform(-1, 1), 0), 1.4, light=k % 3 == 0, candles=6)
-    for k in range(16):                    # petits feux et attroupements dans le no man's land
-        x, y = R.uniform(-38, 38), R.uniform(-4, 4)
+    for k in range(22):                    # petits feux et attroupements dans le no man's land
+        x, y = R.uniform(-25, 25), R.uniform(-4, 6)
         L.sphere((x, y, 0.1), (0.25, 0.25, 0.1), M('braise', '#FF5A20', emit=10), seg=12, name='feu')
         smoke((x, y, 0.5), n=4, s=0.4, rise=4.0)
         for j in range(R.randint(4, 8)):
             a_ = R.uniform(0, 6.3); rr = R.uniform(0.7, 1.4); mini_soldier((x + rr * math.cos(a_), y + rr * math.sin(a_), 0), R.choice(['en', 'de']), 0.5)
-    for k in range(120): mini_soldier((R.uniform(-45, 45), R.uniform(-6, 6), 0), R.choice(['en', 'de']), 0.5)
+    for k in range(160): mini_soldier((R.uniform(-30, 30), R.uniform(-6, 8), 0), R.choice(['en', 'de']), 0.5)
     L.sphere((10, 120, 6), (14, 14, 14), M('soleil', '#FFC890', emit=4), name='soleil')
-    c = mkcam(28); cam_path(c, (-6, -16, 6), (4, -22, 16), (0, 0, 0), (0, 6, 0))
+    c = mkcam(30); cam_path(c, (-5, -9, 3.5), (2, -14, 9), (0, 2, 0), (0, 6, 0))
 
 
 def s_ordre():                            # l'année suivante, les généraux l'interdisent
@@ -509,10 +508,10 @@ def s_ordre():                            # l'année suivante, les généraux l'
     flicker_light((1.1, 0.7, 1.3), '#FFD090', 90, 0.2)
     paper = box((-0.2, 0.3, 0.93), (0.6, 0.8, 0.01), M('papier', '#F4ECD8', rough=0.8), bev=0)
     gen = soldier(-0.1, 1.7, 0.55, 'en', old=True, hero=True, mous='#E8E4EC', scarf='#B02020', poses=[(0, 'down'), (DUR * 0.25, 'give')], look=(0, -0.4))
-    stamp = L.cyl((-0.2, 0.3, 1.6), 0.1, 0.12, 0.2, M('tampon', '#2A1A1A', rough=0.4), name='tampon')
+    stamp = L.cyl((-0.2, 0.3, 1.3), 0.1, 0.12, 0.2, M('tampon', '#2A1A1A', rough=0.4), name='tampon')
     L.cyl((-0.2, 0.3, 1.85), 0.04, 0.05, 0.3, M('manche', '#6A3A20'), name='tampon').parent = stamp
     ts = DUR * 0.55
-    for t, z in ((0, 1.6), (ts - 0.35, 1.45), (ts, 1.05), (ts + 0.15, 1.05), (ts + 0.5, 1.6)):
+    for t, z in ((0, 1.3), (ts - 0.35, 1.38), (ts, 1.05), (ts + 0.15, 1.05), (ts + 0.5, 1.3)):
         stamp.location.z = z; stamp.keyframe_insert('location', frame=F(t))
     word = None
     bpy.ops.object.text_add(location=(-0.2, 0.25, 0.945), rotation=(0, 0, 0)); word = bpy.context.object
@@ -520,7 +519,7 @@ def s_ordre():                            # l'année suivante, les généraux l'
     word.data.materials.append(M('encre', '#C01818', emit=0.6))
     word.scale = (0.001,) * 3; word.keyframe_insert('scale', frame=F(ts)); word.scale = (1, 1, 1); word.keyframe_insert('scale', frame=F(ts) + 2)
     smoke((-1.5, 0.8, 1.3), n=5, s=0.12, rise=1.8, col='#9A949A')         # cigare
-    c = mkcam(35); cam_path(c, (0.2, -3.4, 2.3), (0, -2.6, 2.0), (-0.1, 0.6, 1.1), (-0.15, 0.5, 1.0))
+    c = mkcam(35); cam_path(c, (0.9, -3.4, 2.9), (0.7, -2.7, 2.7), (-0.1, 1.0, 1.6), (-0.15, 0.9, 1.5))
 
 
 def s_fin():                              # « pendant un jour, on était juste des hommes »
@@ -528,9 +527,8 @@ def s_fin():                              # « pendant un jour, on était juste 
     ground('#E8E4F4', bump=0.35)
     L.sphere((3, 40, 1.5), (5, 5, 5), M('soleil', '#FFB070', emit=4), name='soleil')
     L.stars(80, 11)
-    box((0, 0.3, 0.3), (1.6, 0.6, 0.6), M('caisse', '#8A6A40', rough=0.8), bev=0.03)
-    en = soldier(-0.42, 0.2, 0.42, 'en', z=0.15, rot=-0.35, hero=True, poses=[(0, 'down'), (DUR * 0.2, 'give'), (DUR * 0.55, 'laugh')], scarf='#B83A3A')
-    de = soldier(0.42, 0.2, 0.42, 'de', z=0.15, rot=0.35, poses=[(0, 'down'), (DUR * 0.25, 'take'), (DUR * 0.55, 'laugh')], mous='#3A2A20', scarf='#3A5AA8')
+    en = soldier(-0.42, 0.2, 0.42, 'en', rot=0.35, hero=True, poses=[(0, 'down'), (DUR * 0.2, 'give'), (DUR * 0.55, 'laugh')], scarf='#B83A3A')
+    de = soldier(0.42, 0.2, 0.42, 'de', rot=-0.35, poses=[(0, 'down'), (DUR * 0.25, 'take'), (DUR * 0.55, 'laugh')], mous='#3A2A20', scarf='#3A5AA8')
     breath(en); breath(de)
     xmas_tree((1.9, 1.4, 0), 1.3, candles=12)
     for k in range(9): xmas_tree((-12 + k * 3, 12.5, 0.4), 0.9, light=False, candles=6)
@@ -540,7 +538,7 @@ def s_fin():                              # « pendant un jour, on était juste 
         soldier(x0, y0, 0.4, side, pose=R.choice(['down', 'wave']), bob=0.04,
                 path=(lambda d: (lambda t: (0, d * t * 0.35, 0)))(1 if side == 'de' else -1))
     snowfall(260, 12, (-5, 5, -3, 8, -0.2, 5), 0.25)
-    c = mkcam(40); cam_path(c, (0.1, -3.6, 1.35), (0.3, -6.8, 2.4), (0, 0.6, 1.0), (0.2, 2, 1.2))
+    c = mkcam(40); cam_path(c, (0.1, -4.2, 1.6), (0.3, -6.8, 2.4), (0, 0.6, 1.3), (0.2, 2, 1.3))
 
 
 globals()['s_' + SHOT]()
