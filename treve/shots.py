@@ -318,7 +318,7 @@ def mini_soldier(loc, side, s=0.3):
 # ---------------- les plans ----------------
 def s_poignee():                          # accroche : la poignée de main au milieu du no man's land
     L.world('#5A6AB0', '#FFC8A0', 1.0); L.lights(key='#FFE0C0', rim='#9AB0FF', fill='#FFC8E0', k=1.1)
-    ground('#EEF0FA', bump=0.35)
+    ground('#AEB8D2', bump=0.35)
     sandbags(-12, 12, 12, rows=3); sandbags(-12, 12, -9, rows=2)
     for k in range(7): xmas_tree((-9 + k * 3 + R.uniform(-0.4, 0.4), 11.4, 0.6), 1.0, light=k % 2 == 0, candles=7)
     wire(-12, -3, 8.5); wire(3, 12, 8.5)
@@ -364,7 +364,7 @@ def s_tranchee():                         # la tranchée anglaise, la boue, le f
 
 def s_nuit():                             # les sapins illuminés en face, « Douce nuit »
     L.world('#0A1240', '#3A3A7A', 1.0); L.lights(key='#8A9AE0', rim='#FFB070', fill='#3A4A9A', k=0.6)
-    ground('#DDE4F8', bump=0.4)
+    ground('#AEB8D2', bump=0.4)
     L.stars(220, 7); L.big_moon((-7, 45, 16), 3.5, '#FFF0D0')
     sandbags(-16, 16, 15, rows=3, col=('#8A8070', '#7A7060', '#9A9080'))
     for k in range(11): xmas_tree((-13 + k * 2.6 + R.uniform(-0.3, 0.3), 14.5, 0.65), 1.0, light=k % 2 == 0, candles=8)
@@ -400,14 +400,14 @@ def s_chant():                            # les Anglais chantent à leur tour
 
 def s_sortie():                           # au matin, un Allemand sort les mains vides, puis des centaines
     L.world('#6A80C8', '#FFB890', 1.1); L.lights(key='#FFD0A0', rim='#FFA0C0', fill='#A0B8FF', k=1.1)
-    ground('#EEF0FA', bump=0.35)
+    ground('#AEB8D2', bump=0.35)
     L.sphere((-4, 45, 2), (5, 5, 5), M('soleil', '#FFD0A0', emit=4), name='soleil')
     sandbags(-16, 16, 12, rows=3, col=('#8A8070', '#7A7060', '#9A9080'))
     for k in range(6): xmas_tree((-12 + k * 4.6, 11.4, 0.6), 0.9, light=False, candles=6)
     wire(-14, -1.5, 8); wire(1.5, 14, 8)
     for k in range(6): stump((R.choice([-1, 1]) * R.uniform(3, 10), R.uniform(4, 11), 0), R.uniform(0.8, 1.6))
-    first = soldier(0, 12.3, 0.5, 'de', hero=True, poses=[(0, 'up')], mous='#3A2A20',
-                    path=lambda t: (0, -min(6.5, max(0, t - 0.6) * 2.2), -1.6 * (1 - ease(t / 0.6))))
+    first = soldier(0, 12.3, 0.6, 'de', hero=True, poses=[(0, 'up')], mous='#3A2A20',
+                    path=lambda t: (0, -min(9.0, max(0, t - 0.6) * 3.6), -1.6 * (1 - ease(t / 0.6))))
     breath(first)
     for k in range(22):                    # puis tous les autres sortent
         x = R.choice([-1, 1]) * R.uniform(1.2, 13); t0 = DUR * 0.35 + R.uniform(0, DUR * 0.4)
@@ -422,7 +422,7 @@ def s_sortie():                           # au matin, un Allemand sort les mains
 
 def s_echanges():                         # chocolat, cigarettes, boutons… et les morts enterrés ensemble
     L.world('#6A8AD0', '#FFE0C0', 1.1); L.lights(key='#FFE0C0', rim='#B0C0FF', fill='#FFD0E0', k=1.1)
-    ground('#EEF0FA', bump=0.3)
+    ground('#AEB8D2', bump=0.3)
     sandbags(-16, 16, 14, rows=3); xmas_tree((0, 3.2, 0), 1.5, candles=12)
     items = [('chocolat', lambda loc: box(loc, (0.22, 0.05, 0.12), M('choco', '#5A3020', rough=0.4), bev=0.01)),
              ('cigarettes', lambda loc: box(loc, (0.16, 0.06, 0.1), M('paquet', '#E8D8B0', rough=0.5), bev=0.01)),
@@ -452,7 +452,7 @@ def s_echanges():                         # chocolat, cigarettes, boutons… et 
 
 def s_foot():                             # le match dans la neige
     L.world('#2A50B0', '#FFC8A0', 0.9); L.lights(key='#FFD8B0', rim='#B0C0FF', fill='#8AA0E0', k=0.9)
-    ground('#DDE2F4', bump=0.25)
+    ground('#AEB8D2', bump=0.25)
     def bpath(t): return (2.6 * math.sin(t * 0.9), 1.0 + 0.8 * math.sin(t * 1.7), 0.13 + 0.5 * abs(math.sin(t * 3.0)))
     b = ball((0, 1, 0.13))
     def mv(t): b.location = bpath(t); b.rotation_euler = (t * 7, t * 3, 0)
@@ -477,7 +477,7 @@ def s_foot():                             # le match dans la neige
 
 def s_front():                            # vue du ciel : tout le front s'arrête
     L.world('#2A3A80', '#FF9A70', 1.1); L.lights(key='#FFC8A0', rim='#A0B0FF', fill='#FFA0C0', k=1.3)
-    ground('#DDE4F8', size=200, bump=0.6)
+    ground('#AEB8D2', size=200, bump=0.6)
     for side, y0 in (('de', 9), ('en', -9)):
         pts = [(x, y0 + 1.6 * ((x // 3) % 2), 0.05) for x in range(-60, 61, 3)]
         L.curve(pts, [1] * len(pts), M('tranchee', '#4A3A30', rough=0.9), bevel=0.45, name='tranchee')
@@ -485,7 +485,7 @@ def s_front():                            # vue du ciel : tout le front s'arrêt
     for k in range(22):                    # petits feux et attroupements dans le no man's land
         x, y = R.uniform(-25, 25), R.uniform(-4, 6)
         L.sphere((x, y, 0.1), (0.25, 0.25, 0.1), M('braise', '#FF5A20', emit=10), seg=12, name='feu')
-        smoke((x, y, 0.5), n=4, s=0.4, rise=4.0)
+        smoke((x, y, 0.5), n=4, s=0.3, rise=3.0, col='#5A5462')
         for j in range(R.randint(4, 8)):
             a_ = R.uniform(0, 6.3); rr = R.uniform(0.7, 1.4); mini_soldier((x + rr * math.cos(a_), y + rr * math.sin(a_), 0), R.choice(['en', 'de']), 0.5)
     for k in range(160): mini_soldier((R.uniform(-30, 30), R.uniform(-6, 8), 0), R.choice(['en', 'de']), 0.5)
@@ -524,7 +524,7 @@ def s_ordre():                            # l'année suivante, les généraux l'
 
 def s_fin():                              # « pendant un jour, on était juste des hommes »
     L.world('#2A2A70', '#FF9A6A', 1.1); L.lights(key='#FFB880', rim='#B0A0FF', fill='#FF90B0', k=1.1)
-    ground('#E8E4F4', bump=0.35)
+    ground('#AEB8D2', bump=0.35)
     L.sphere((3, 40, 1.5), (5, 5, 5), M('soleil', '#FFB070', emit=4), name='soleil')
     L.stars(80, 11)
     en = soldier(-0.42, 0.2, 0.42, 'en', rot=0.35, hero=True, poses=[(0, 'down'), (DUR * 0.2, 'give'), (DUR * 0.55, 'laugh')], scarf='#B83A3A')
@@ -553,7 +553,7 @@ def polish():
         if not m.use_nodes or 'Principled BSDF' not in m.node_tree.nodes: continue
         b = m.node_tree.nodes['Principled BSDF']
         if b.inputs['Emission Strength'].default_value > 0:
-            if m.name.startswith('soleil'): b.inputs['Emission Strength'].default_value *= 2.5
+            if m.name.startswith('soleil'): b.inputs['Emission Strength'].default_value *= 1.2
             continue
         b.inputs['Roughness'].default_value = max(0.22, b.inputs['Roughness'].default_value * 0.75)
         b.inputs['Sheen Weight'].default_value = 0.12; b.inputs['Sheen Roughness'].default_value = 0.4
@@ -564,8 +564,14 @@ def polish():
     cam = sc.camera
     if heroes and cam and SHOT not in ('front',):
         cam.data.dof.use_dof = True; cam.data.dof.focus_object = heroes[0]['root']; cam.data.dof.aperture_fstop = 2.4
-    for o in bpy.data.objects:
-        if o.type == 'LIGHT' and 'rim' in o.name.lower(): o.data.energy *= 1.35
+    day = SHOT in ('poignee', 'sortie', 'echanges', 'foot', 'fin', 'front')
+    for o in bpy.data.objects:                 # scènes de jour : lumière plus douce, ciel moins brûlé
+        if o.type == 'LIGHT' and o.data.type == 'AREA': o.data.energy *= (0.6 if day else 0.85)
+        if o.type == 'LIGHT' and 'rim' in o.name.lower(): o.data.energy *= 1.4
+    w = sc.world
+    if day and w and w.use_nodes: w.node_tree.nodes['Background'].inputs['Strength'].default_value *= 0.7
+    ee.shadow_cube_size = '2048'; ee.shadow_cascade_size = '2048'; ee.use_soft_shadows = True
+    ee.gtao_distance = 1.0; ee.gtao_factor = 1.2
 
 
 polish()
