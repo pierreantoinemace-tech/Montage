@@ -236,11 +236,12 @@ def note(loc, s=0.25):
 
 def notes_flow(src, n=10, spread=(3, 1), rise=3.0, drift=(0, -2), s=0.3, speed=0.22):
     x, y, z = src; ns = [(note((x, y, z), s), R.uniform(0, 1), R.uniform(-spread[0], spread[0]), R.uniform(-spread[1], spread[1])) for _ in range(n)]
+    ns = [(o, ph, ox, oy, tuple(o.scale)) for o, ph, ox, oy in ns]
     def up(t):
-        for o, ph, ox, oy in ns:
+        for o, ph, ox, oy, b0 in ns:
             u = (t * speed + ph) % 1.0
             o.location = (x + ox + drift[0] * u + 0.3 * math.sin(t * 2 + ph * 9), y + oy + drift[1] * u, z + rise * u)
-            k = math.sin(math.pi * u) ** 0.5; o.scale = (k, k, k); o.rotation_euler.y = 0.4 * math.sin(t * 3 + ph * 5)
+            k = math.sin(math.pi * u) ** 0.5; o.scale = (b0[0] * k, b0[1] * k, b0[2] * k); o.rotation_euler.y = 0.4 * math.sin(t * 3 + ph * 5)
     ANIM.append(up)
 
 
@@ -375,7 +376,7 @@ def s_nuit():                             # les sapins illuminés en face, « Do
     sandbags(-4, 4, -0.6, rows=4)          # notre parapet au premier plan
     a1 = soldier(-0.9, -1.4, 0.5, 'en', z=-0.35, hero=True, look=(0, 0.3), pose='down', scarf='#B83A3A'); breath(a1)
     a2 = soldier(1.0, -1.5, 0.5, 'en', z=-0.4, look=(0, 0.3), pose='point'); breath(a2)
-    notes_flow((0, 14, 2.0), n=18, spread=(9, 0.5), rise=3.5, drift=(0, -5), s=0.3, speed=0.16)
+    notes_flow((0, 14, 2.0), n=18, spread=(9, 0.5), rise=3.5, drift=(0, -5), s=1.0, speed=0.16)
     snowfall(240, 5, (-6, 6, -1, 14, -0.2, 6), 0.35)
     c = mkcam(32); cam_path(c, (0, -5.2, 1.5), (0, -4.6, 2.0), (0, 8, 1.4), (0, 8, 1.6))
 
@@ -392,7 +393,7 @@ def s_chant():                            # les Anglais chantent à leur tour
         i = soldier(-2.6 + k * 1.0, 0.4 + 0.25 * (k % 2), 0.48, 'en', rot=R.uniform(-0.25, 0.25), pose='sing', sing=True, hero=k == 2,
                     path=(lambda ph: (lambda t: (0.06 * math.sin(t * 2.0 + ph), 0, 0)))(k * 0.7), scarf=SCARVES[k % 5])
         breath(i)
-    notes_flow((-0.5, 0.8, 2.2), n=12, spread=(3, 0.3), rise=2.5, drift=(0, 3), s=0.22, speed=0.2)
+    notes_flow((-0.5, 0.8, 2.2), n=12, spread=(3, 0.3), rise=2.5, drift=(0, 3), s=0.7, speed=0.2)
     snowfall(200, 6, (-4, 4, -2, 2, 0, 5), 0.35)
     c = mkcam(32); cam_path(c, (-1.2, -4.6, 1.6), (0.6, -4.2, 1.7), (-0.4, 0.6, 1.4), (0.2, 0.6, 1.4))
 
@@ -413,7 +414,6 @@ def s_sortie():                           # au matin, un Allemand sort les mains
         sp = R.uniform(1.0, 1.8)
         soldier(x, 12.4, 0.45, 'de', rot=R.uniform(-0.3, 0.3), poses=[(0, 'up'), (t0 + 1.2, R.choice(['wave', 'up', 'cheer']))],
                 path=(lambda t0, sp: (lambda t: (0, -max(0, t - t0 - 0.5) * sp, -1.6 * (1 - ease((t - t0) / 0.5)))))(t0, sp))
-    sandbags(-5, 5, -0.8, rows=2)
     for k, x in enumerate((-1.6, 1.7)):
         soldier(x, -1.6, 0.5, 'en', z=-0.3, look=(0, 0.4), poses=[(0, 'down'), (DUR * 0.6 + k * 0.3, 'wave')])
     snowfall(160, 8, (-6, 6, -1, 12, -0.2, 5), 0.3)
