@@ -237,6 +237,64 @@ def s_hook(cv, t, lt):
             opath(cv, ar, GOLD, 7); cv.restore()
 
 
+def s_yeux(cv, t, lt):
+    """« là, maintenant » : très gros plan sur les yeux qui cherchent partout (saccades)."""
+    cv.drawRect(BIG, P('#0E0A1E'))
+    k = int(lt * 5) % 4; look = [(-0.9, -0.2), (0.9, -0.3), (-0.6, 0.6), (0.8, 0.5)][k]
+    hero(cv, t, PX, 1050, 760, 'open', look=look)
+    for j in range(5):
+        g = j * 1.26 + t * 0.7; r = 470 + 30 * math.sin(t * 3 + j)
+        qmark(cv, PX + math.cos(g) * r, 1000 + math.sin(g) * r * 1.4, 90, 15 * math.sin(t * 2 + j), GOLD, 200)
+
+
+def loupe(cv, x, y, r, t):
+    cv.drawCircle(x, y, r, P('#BFE6FF', 50))
+    cv.save(); cv.translate(x, y); cv.rotate(40)
+    opath(cv, rect(r * 0.95, -r * 0.14, r * 1.1, r * 0.28, r * 0.1), '#8A4A6A', 8); cv.restore()
+    cv.drawCircle(x, y, r, P(OUT, 255, stroke=22)); cv.drawCircle(x, y, r, P('#C8A880', 255, stroke=12))
+    p = skia.Path(); p.addArc(skia.Rect.MakeLTRB(x - r * 0.7, y - r * 0.7, x + r * 0.7, y + r * 0.7), 200, 50); cv.drawPath(p, P('#FFFFFF', 200, stroke=10))
+
+
+def s_cherche(cv, t, lt):
+    """« que tu ne vois pas » : le perso fouille le décor à la loupe, sans trouver."""
+    banded_sky(cv, ['#0A0716', '#120C24', '#1A1032', '#22143E', '#2C184A', '#361C54'], -600, 1300, t)
+    dots(cv, 81, 120, (-100, -100, W + 100, 1200), '#B8A8D0')
+    striped_sun(cv, 200, 420, 110, t, ['#4A2350', '#5A2C5C', '#6C3666'])
+    hill(cv, 1300, 40, 0.006, 0.3, '#2A1A40', '#33214C', t)
+    hill(cv, 1560, 50, 0.005, 2.0, '#1A2438', '#223048', t)
+    for x, h, ph, b in ((90, 260, 0, '#C8A8D8'), (260, 180, 1.2, '#8FC8C0'), (840, 210, 2.2, '#E0B890'), (1000, 250, 3.0, '#D89AAE')):
+        plant(cv, x, 1760, h, '#2E5A5A', b, t, ph)
+    lx = PX + 330 * math.sin(lt * 2.6); ly = 1150 + 180 * math.sin(lt * 1.9)
+    hero(cv, t, PX, 1480, 190, 'open', look=((lx - PX) / 330, (ly - 1480) / 400))
+    loupe(cv, lx, ly, 120, t)
+
+
+def s_journee(cv, t, lt):
+    """« toute la journée » : le soleil et la lune font le tour du ciel en accéléré ; le nez, lui, ne bouge pas."""
+    pov_world(cv, t, lt * 0.9, sun_speed=1.0)
+    pov_nose(cv, t)
+    vf = skia.Path(); vf.addOval(skia.Rect.MakeLTRB(-260, 120, W + 260, H - 120))
+    full = skia.Path(); full.addRect(skia.Rect.MakeLTRB(-600, -600, W + 600, H + 600))
+    cv.drawPath(skia.Op(full, vf, skia.PathOp.kDifference_PathOp), P('#06040C', 235)); cv.drawPath(vf, P(OUT, 255, stroke=10))
+
+
+def s_vie(cv, t, lt):
+    """« toute ta vie » : tempête de pages de calendrier autour du perso."""
+    R.s_calendrier(cv, t * 3, lt)
+
+
+def s_perplexe(cv, t, lt):
+    """« tu ne le vois jamais ? » : gros plan, regard qui louche vers le bas, un énorme point d'interrogation."""
+    cv.drawRect(BIG, P('#140C24'))
+    for k in range(12):
+        g = k * math.pi / 6 + lt * 0.5
+        p = skia.Path(); p.moveTo(PX, 1100); p.lineTo(PX + math.cos(g) * 2000, 1100 + math.sin(g) * 2000); p.lineTo(PX + math.cos(g + 0.15) * 2000, 1100 + math.sin(g + 0.15) * 2000); p.close()
+        cv.drawPath(p, P('#3A1E50', 255))
+    hero(cv, t, PX, 1250, 480, 'lidded', look=(0.0, 1.0))
+    u = pop(lt, 0.05, 0.4)
+    if u > 0: qmark(cv, 880, 1550, 300 * u, 12 + 6 * math.sin(t * 3), GOLD)
+
+
 def s_reveal(cv, t, lt):
     """« ton nez ! » : flash, zoom fort sur le nez qui s'illumine."""
     banded_sky(cv, ['#2A1036', '#3A1640', '#4A1C4A', '#5A2452', '#6A2C5A', '#7A3462'], -600, 2000, t)
@@ -461,43 +519,71 @@ def s_fin(cv, t, lt):
     cv.restore()
 
 
-SCENES = [(0.0, s_hook, None), (4.3, s_reveal, 'flash'), (5.1, s_pov, 'iris'), (9.2, s_pourquoi, 'wave'), (10.95, s_ferme, 'cut'),
-          (14.6, s_cerveau, 'iris'), (17.85, s_regle, 'cut'), (21.65, lambda cv, t, lt: s_tout(cv, t, lt + 0.0, 0), 'flash'),
-          (24.25, lambda cv, t, lt: s_tout(cv, t, lt, 1), 'flash'), (25.6, lambda cv, t, lt: s_tout(cv, t, lt, 2), 'flash'),
-          (26.85, s_plus, 'wave'), (28.05, s_habitue, 'iris'), (29.9, s_aimes, 'wave'), (31.15, s_fin, 'iris')]
-TW = 0.25
+def _tout(i): return lambda cv, t, lt: s_tout(cv, t, lt, i)
+
+
+# (début, scène, transition d'entrée) — transitions = mouvements de caméra : pan (gauche/droite/haut/bas), zoom (travelling avant), shake (coupe sèche + secousse)
+SCENES = [(0.0, s_hook, None), (1.75, s_yeux, 'zoom'), (2.85, s_cherche, 'pan_l'), (4.3, s_reveal, 'shake'), (5.1, s_pov, 'zoom'),
+          (7.2, s_journee, 'pan_u'), (8.2, s_vie, 'pan_r'), (9.2, s_pourquoi, 'pan_d'), (10.15, s_perplexe, 'zoom'), (10.95, s_ferme, 'cut'),
+          (14.6, s_cerveau, 'pan_u'), (17.85, s_regle, 'zoom'), (21.65, _tout(0), 'pan_l'), (24.25, _tout(1), 'pan_l'), (25.6, _tout(2), 'pan_l'),
+          (26.85, s_plus, 'pan_d'), (28.05, s_habitue, 'pan_r'), (29.9, s_aimes, 'pan_r'), (31.15, s_fin, 'zoom')]
+TW = 0.22                                           # demi-durée d'une transition
 
 
 def draw_scene(i, cv, t):
-    s0, fn, _ = SCENES[i]; lt = t - s0
-    z = 1.0 + 0.04 * ease(clamp(max(0, lt) / 4))
-    cv.save(); cv.translate(PX, PY); cv.scale(z, z); cv.translate(-PX, -PY); fn(cv, t, max(0.0, lt)); cv.restore()
+    s0, fn, kind = SCENES[i]; lt = t - s0
+    z = 1.0 + 0.05 * ease(clamp(max(0, lt) / 3))
+    cv.save(); cv.translate(PX, PY); cv.scale(z, z); cv.translate(-PX, -PY)
+    if kind == 'shake' and 0 <= lt < 0.35:
+        a = 30 * (1 - lt / 0.35); cv.translate(a * math.sin(lt * 90), a * math.cos(lt * 70))
+    fn(cv, t, max(0.0, lt)); cv.restore()
 
 
-def mask(kind, p):
-    if kind == 'iris': return skia.Path().addCircle(PX, PY, 2000 * ease(p) ** 1.3)
-    y = H + 250 - (H + 700) * ease(p)
-    m = skia.Path(); m.moveTo(-700, H + 700)
-    for x in range(-700, W + 701, 20): m.lineTo(x, y + 60 * math.sin(x * 0.006 + p * 6))
-    m.lineTo(W + 700, H + 700); m.close(); return m
+DIRS = {'pan_l': (-1, 0), 'pan_r': (1, 0), 'pan_u': (0, -1), 'pan_d': (0, 1)}
+
+
+def camera_move(cv, i, t, p):
+    """La caméra se déplace de la scène i-1 vers la scène i (avec flou de bougé)."""
+    kind = SCENES[i][2]
+    if kind in DIRS:
+        dx, dy = DIRS[kind]; L = (W if dx else H) * 1.05
+        for j, aa in enumerate((255, 128, 85)):                 # 3 échantillons = flou de mouvement
+            u = ease(clamp(p + (j - 1) * 0.06))
+            cv.saveLayerAlpha(None, aa)
+            cv.save(); cv.translate(-dx * L * u, -dy * L * u); draw_scene(i - 1, cv, t); cv.restore()
+            cv.save(); cv.translate(dx * L * (1 - u), dy * L * (1 - u)); draw_scene(i, cv, t); cv.restore()
+            cv.restore()
+    else:                                                       # travelling avant : on fonce dans l'image, la suivante arrive
+        u = ease(p)
+        cv.save(); z = 1 + 5 * u ** 2; cv.translate(PX, PY); cv.scale(z, z); cv.translate(-PX, -PY); draw_scene(i - 1, cv, t); cv.restore()
+        cv.saveLayerAlpha(None, int(255 * clamp((p - 0.35) / 0.4)))
+        z = 0.55 + 0.45 * u; cv.save(); cv.translate(PX, PY); cv.scale(z, z); cv.translate(-PX, -PY); draw_scene(i, cv, t); cv.restore()
+        cv.restore()
 
 
 def scene(cv, t):
     i = 0
     for k, (s0, _, kind) in enumerate(SCENES):
-        if t >= s0 - (TW if kind in ('iris', 'wave') else 0): i = k
+        if t >= s0 - (TW if kind in DIRS or kind == 'zoom' else 0): i = k
     s0, _, kind = SCENES[i]
-    if kind in ('iris', 'wave') and t < s0 + TW:
-        p = (t - (s0 - TW)) / (2 * TW)
-        draw_scene(i - 1, cv, t); m = mask(kind, p)
-        cv.save(); cv.clipPath(m, doAntiAlias=True); draw_scene(i, cv, t); cv.restore()
-        cv.drawPath(m, P(OUT, 255, stroke=16)); cv.drawPath(m, P(CREAM, 255, stroke=5))
+    if (kind in DIRS or kind == 'zoom') and t < s0 + TW:
+        camera_move(cv, i, t, (t - (s0 - TW)) / (2 * TW))
     else:
         draw_scene(i, cv, t)
-        if kind == 'flash' and t - s0 < 0.4:
-            u = ease_out((t - s0) / 0.4)
-            cv.drawRect(BIG, P('#FFF6D8', int(150 * (1 - u))))
-            cv.drawCircle(PX, PY, 40 + 1600 * u, P(OUT, int(255 * (1 - u)), stroke=26)); cv.drawCircle(PX, PY, 40 + 1600 * u, P(CREAM, int(255 * (1 - u)), stroke=10))
+
+
+# ---------------- bruitages ----------------
+EVENTS = [(0.05, 'beep', 0.6), (0.65, 'beep', 0.6), (1.25, 'beep', 0.6)]
+for s0, _, kind in SCENES[1:]:
+    if kind in DIRS: EVENTS.append((s0 - TW, 'whoosh', 0.8))
+    elif kind == 'zoom': EVENTS.append((s0 - TW, 'rise', 0.5))
+EVENTS += [(4.3, 'impact', 1.0), (4.33, 'ding', 0.7), (7.25, 'rise', 0.5)]
+EVENTS += [(8.25 + k * 0.09, 'flip', 0.5) for k in range(10)]
+EVENTS += [(9.2 + k * 0.12, 'pop', 0.5) for k in range(8)] + [(10.2, 'pop', 0.8)]
+EVENTS += [(10.95, 'blink', 0.8), (11.4, 'blink', 0.6), (11.95, 'ding', 0.8), (13.3, 'pop', 0.7)]
+EVENTS += [(16.55, 'unroll', 0.7), (17.1, 'click', 0.6), (20.5, 'scrub', 1.0)]
+EVENTS += [(21.7, 'hum', 0.9), (24.3, 'sparkle', 0.8), (25.65, 'whoosh', 0.3), (26.2, 'powerdown', 0.6), (27.0, 'powerdown', 0.7)]
+EVENTS += [(28.1, 'sparkle', 0.6), (28.6, 'powerdown', 0.6), (30.0, 'heartbeat', 0.9), (30.75, 'heartbeat', 0.5), (32.15, 'ding', 0.9)]
 
 
 def frame(fi):
@@ -522,10 +608,12 @@ if __name__ == '__main__':
         m = Image.new('RGB', (270 * min(6, len(ims)), 480 * ((len(ims) + 5) // 6)))
         for k, im in enumerate(ims): m.paste(im, ((k % 6) * 270, (k // 6) * 480))
         m.save(sys.argv[3]); sys.exit()
+    sys.path.insert(0, os.path.join(HERE, '..')); import sfx
+    sfx.mix(os.path.join(WORK, 'voice.wav'), EVENTS, os.path.join(WORK, 'mix_nez.wav'))
     out = os.path.join(HERE, 'nez_4k.mp4'); hd = os.path.join(HERE, 'nez_1080p.mp4')
     n = int(DUR * FPS)
     ff = subprocess.Popen(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', f'{OW_}x{OH_}', '-r', str(FPS), '-i', '-',
-                           '-i', os.path.join(WORK, 'voice.wav'),
+                           '-i', os.path.join(WORK, 'mix_nez.wav'),
                            '-filter_complex', '[0:v]format=yuv420p,split=2[v4][vh];[vh]scale=1080:1920:flags=lanczos[v1]',
                            '-map', '[v4]', '-map', '1:a', '-c:v', 'libx264', '-profile:v', 'high', '-level:v', '5.1', '-preset', 'slow', '-crf', '15',
                            '-maxrate', '25M', '-bufsize', '50M', '-c:a', 'aac', '-b:a', '256k', '-t', str(DUR), '-movflags', '+faststart', out,
