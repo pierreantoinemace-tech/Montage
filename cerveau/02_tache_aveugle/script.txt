@@ -1,8 +1,8 @@
-[intrigued, energetic] Là, maintenant, il y a un trou dans ta vision. Et ton cerveau te le cache.
-[casual] Je te le prouve. Ferme l'œil gauche. Avec l'œil droit, fixe la croix. Ne la lâche pas. Et rapproche doucement ton téléphone.
-[short pause] [excited] Le point a disparu.
-[lively] Au fond de chaque œil, il y a un endroit où le nerf optique sort. À cet endroit, aucun capteur de lumière. Tu es littéralement aveugle.
-[curious] Alors pourquoi tu ne vois pas un trou noir en permanence ?
-[lively] Parce que ton cerveau le remplit. Il regarde ce qu'il y a autour… et il invente le reste. Du ciel, un mur, un visage. Sans jamais te prévenir.
+[urgent, intrigued] Ferme l'œil gauche. Vite. Et fixe la croix avec l'œil droit.
+[casual] Maintenant, rapproche doucement ton téléphone… [short pause] [excited] Le point a disparu ?
+[lively] T'as un trou dans ta vision. Là. Depuis toujours.
+[curious] Au fond de chaque œil, il y a l'endroit où sort le nerf optique. Et à cet endroit, aucun capteur de lumière. Tu es aveugle.
+[intrigued] Alors pourquoi tu ne vois pas un trou noir en permanence ?
+[lively] Parce que ton cerveau le bouche. Il regarde ce qu'il y a autour… et il invente le reste. Du ciel, un mur, un visage. Sans jamais te prévenir.
 [thoughtful] Une partie de ce que tu vois en ce moment… n'existe pas.
-[teasing] Alors… qu'est-ce qu'il invente d'autre ?
+[teasing] Et c'est pas le pire. Ton cerveau te fait aussi vivre dans le passé. Je te le prouve dans la partie 2.
