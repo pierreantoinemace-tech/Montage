@@ -5,4 +5,5 @@
 [intrigued] Alors pourquoi tu ne vois pas un trou noir en permanence ?
 [lively] Parce que ton cerveau le bouche. Il regarde ce qu'il y a autour… et il invente le reste. Du ciel, un mur, un visage. Sans jamais te prévenir.
 [thoughtful] Une partie de ce que tu vois en ce moment… n'existe pas.
-[teasing] Et c'est pas le pire. Ton cerveau te fait aussi vivre dans le passé. Je te le prouve dans la partie 2.
+[intrigued] Et il ne bouche pas que des trous dans l'espace… il bouche aussi des trous dans le temps. Parce que tout ce que tu vois… s'est déjà passé.
+[teasing] Ça, c'est la partie 2.
