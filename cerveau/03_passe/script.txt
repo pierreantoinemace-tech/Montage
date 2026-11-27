@@ -1,0 +1,7 @@
+[intrigued, energetic] Tout ce que tu vois, là… s'est déjà passé.
+[casual] Ton cerveau met environ un dixième de seconde à traiter ce que voient tes yeux. Tu vis donc toujours un peu en retard sur le monde.
+[curious] Mais alors, comment tu fais pour attraper une balle qu'on te lance ? Avec ce retard, tu devrais la rater à chaque fois.
+[lively] La réponse est complètement folle : ton cerveau devine le futur. Il calcule où la balle va être… et il te montre sa prédiction. Pas la réalité.
+[casual] Et tu peux le voir. Quand tes yeux se posent sur une horloge, la première seconde paraît plus longue que les autres. C'est ton cerveau qui bouche le trou… en inventant du temps.
+[thoughtful] Tu ne vis ni dans le présent… ni dans le passé.
+[warmly] Tu vis dans la prédiction de ton cerveau.
