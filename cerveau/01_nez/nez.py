@@ -523,11 +523,11 @@ def _tout(i): return lambda cv, t, lt: s_tout(cv, t, lt, i)
 
 
 # (début, scène, transition d'entrée) — transitions = mouvements de caméra : pan (gauche/droite/haut/bas), zoom (travelling avant), shake (coupe sèche + secousse)
-SCENES = [(0.0, s_hook, None), (1.75, s_yeux, 'zoom'), (2.85, s_cherche, 'pan_l'), (4.3, s_reveal, 'shake'), (5.1, s_pov, 'zoom'),
-          (7.2, s_journee, 'pan_u'), (8.2, s_vie, 'pan_r'), (9.2, s_pourquoi, 'pan_d'), (10.15, s_perplexe, 'zoom'), (10.95, s_ferme, 'cut'),
-          (14.6, s_cerveau, 'pan_u'), (17.85, s_regle, 'zoom'), (21.65, _tout(0), 'pan_l'), (24.25, _tout(1), 'pan_l'), (25.6, _tout(2), 'pan_l'),
-          (26.85, s_plus, 'pan_d'), (28.05, s_habitue, 'pan_r'), (29.9, s_aimes, 'pan_r'), (31.15, s_fin, 'zoom')]
-TW = 0.22                                           # demi-durée d'une transition
+SCENES = [(0.0, s_hook, None), (1.75, s_yeux, 'pan_d'), (2.85, s_cherche, 'pan_l'), (4.3, s_reveal, 'shake'), (5.1, s_pov, 'pan_r'),
+          (7.2, s_journee, 'pan_u'), (8.2, s_vie, 'pan_r'), (9.2, s_pourquoi, 'pan_d'), (10.15, s_perplexe, 'pan_l'), (10.95, s_ferme, 'cut'),
+          (14.6, s_cerveau, 'pan_u'), (17.85, s_regle, 'cut'), (21.65, _tout(0), 'pan_l'), (24.25, _tout(1), 'pan_l'), (25.6, _tout(2), 'pan_l'),
+          (26.85, s_plus, 'pan_d'), (28.05, s_habitue, 'pan_r'), (29.9, s_aimes, 'pan_r'), (31.15, s_fin, 'pan_u')]
+TW = 0.28                                           # demi-durée d'une transition
 
 
 def draw_scene(i, cv, t):
@@ -543,30 +543,19 @@ DIRS = {'pan_l': (-1, 0), 'pan_r': (1, 0), 'pan_u': (0, -1), 'pan_d': (0, 1)}
 
 
 def camera_move(cv, i, t, p):
-    """La caméra se déplace de la scène i-1 vers la scène i (avec flou de bougé)."""
-    kind = SCENES[i][2]
-    if kind in DIRS:
-        dx, dy = DIRS[kind]; L = (W if dx else H) * 1.05
-        for j, aa in enumerate((255, 128, 85)):                 # 3 échantillons = flou de mouvement
-            u = ease(clamp(p + (j - 1) * 0.06))
-            cv.saveLayerAlpha(None, aa)
-            cv.save(); cv.translate(-dx * L * u, -dy * L * u); draw_scene(i - 1, cv, t); cv.restore()
-            cv.save(); cv.translate(dx * L * (1 - u), dy * L * (1 - u)); draw_scene(i, cv, t); cv.restore()
-            cv.restore()
-    else:                                                       # travelling avant : on fonce dans l'image, la suivante arrive
-        u = ease(p)
-        cv.save(); z = 1 + 5 * u ** 2; cv.translate(PX, PY); cv.scale(z, z); cv.translate(-PX, -PY); draw_scene(i - 1, cv, t); cv.restore()
-        cv.saveLayerAlpha(None, int(255 * clamp((p - 0.35) / 0.4)))
-        z = 0.55 + 0.45 * u; cv.save(); cv.translate(PX, PY); cv.scale(z, z); cv.translate(-PX, -PY); draw_scene(i, cv, t); cv.restore()
-        cv.restore()
+    """La caméra glisse de la scène i-1 vers la scène i, posée juste à côté dans le même monde (net, sans flou ni fondu)."""
+    dx, dy = DIRS[SCENES[i][2]]; L = W if dx else H
+    u = p * p * p * (p * (6 * p - 15) + 10)                     # départ et arrivée en douceur
+    cv.save(); cv.translate(-dx * L * u, -dy * L * u); draw_scene(i - 1, cv, t); cv.restore()
+    cv.save(); cv.translate(dx * L * (1 - u), dy * L * (1 - u)); draw_scene(i, cv, t); cv.restore()
 
 
 def scene(cv, t):
     i = 0
     for k, (s0, _, kind) in enumerate(SCENES):
-        if t >= s0 - (TW if kind in DIRS or kind == 'zoom' else 0): i = k
+        if t >= s0 - (TW if kind in DIRS else 0): i = k
     s0, _, kind = SCENES[i]
-    if (kind in DIRS or kind == 'zoom') and t < s0 + TW:
+    if kind in DIRS and t < s0 + TW:
         camera_move(cv, i, t, (t - (s0 - TW)) / (2 * TW))
     else:
         draw_scene(i, cv, t)
@@ -575,14 +564,16 @@ def scene(cv, t):
 # ---------------- bruitages ----------------
 EVENTS = [(0.05, 'beep', 0.6), (0.65, 'beep', 0.6), (1.25, 'beep', 0.6)]
 for s0, _, kind in SCENES[1:]:
-    if kind in DIRS: EVENTS.append((s0 - TW, 'whoosh', 0.8))
-    elif kind == 'zoom': EVENTS.append((s0 - TW, 'rise', 0.5))
+    if kind in DIRS: EVENTS.append((s0 - TW + 0.05, 'whoosh', 0.55))
 EVENTS += [(4.3, 'impact', 1.0), (4.33, 'ding', 0.7), (7.25, 'rise', 0.5)]
 EVENTS += [(8.25 + k * 0.09, 'flip', 0.5) for k in range(10)]
 EVENTS += [(9.2 + k * 0.12, 'pop', 0.5) for k in range(8)] + [(10.2, 'pop', 0.8)]
 EVENTS += [(10.95, 'blink', 0.8), (11.4, 'blink', 0.6), (11.95, 'ding', 0.8), (13.3, 'pop', 0.7)]
 EVENTS += [(16.55, 'unroll', 0.7), (17.1, 'click', 0.6), (20.5, 'scrub', 1.0)]
 EVENTS += [(21.7, 'hum', 0.9), (24.3, 'sparkle', 0.8), (25.65, 'whoosh', 0.3), (26.2, 'powerdown', 0.6), (27.0, 'powerdown', 0.7)]
+EVENTS += [(s, 'pop', 0.22) for w, s, e, k, b in WORDS if k]                       # petit « pop » sur chaque mot clé
+EVENTS += [(3.2, 'ting', 0.6), (3.9, 'ting', 0.4), (4.35, 'sparkle', 0.6), (10.2, 'boing', 0.7), (25.75, 'sniff', 0.9)]
+EVENTS += [(28.4 + k * 0.11, 'click', 0.35) for k in range(12)] + [(17.95 + k * 0.5, 'beep', 0.25) for k in range(5)]
 EVENTS += [(28.1, 'sparkle', 0.6), (28.6, 'powerdown', 0.6), (30.0, 'heartbeat', 0.9), (30.75, 'heartbeat', 0.5), (32.15, 'ding', 0.9)]
 
 

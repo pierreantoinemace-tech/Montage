@@ -98,7 +98,21 @@ def flip(): return _bp(rng.standard_normal(int(0.05 * SR)), 800, 5000) * np.exp(
 def unroll(): return whoosh(0.5, 200, 1800) * 0.7
 
 
-KINDS = dict(whoosh=whoosh, rise=rise, pop=pop, ding=ding, impact=impact, beep=beep, click=click, blink=blink, scrub=scrub,
+def ting(): return ding(2800, 0.6) * 0.7
+
+
+def boing(d=0.5):
+    t = _t(d); f = 220 + 160 * np.sin(2 * np.pi * 9 * t) * np.exp(-t * 6)
+    return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * 5) * 0.6
+
+
+def sniff(d=0.55):
+    n = int(d * SR); u = np.linspace(0, 1, n)
+    x = _bp(rng.standard_normal(n), 1200, 5000) * np.sin(np.pi * u) * (0.6 + 0.4 * (u < 0.35)) * u ** 0.3
+    return x / np.abs(x).max() * 0.6
+
+
+KINDS = dict(ting=ting, boing=boing, sniff=sniff, whoosh=whoosh, rise=rise, pop=pop, ding=ding, impact=impact, beep=beep, click=click, blink=blink, scrub=scrub,
              hum=hum, sparkle=sparkle, powerdown=powerdown, heartbeat=heartbeat, flip=flip, unroll=unroll)
 
 
